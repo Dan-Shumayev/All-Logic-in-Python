@@ -1,3 +1,3 @@
-### **This repository is dedicated to share and manage my Logics projects' Python code**
+# **Logic projects will be accordingly tagged, shared and managed via this repository**
 
 
