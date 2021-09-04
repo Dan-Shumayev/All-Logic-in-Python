@@ -8,4 +8,9 @@
         * A data structure implemented in Python
 
 
-#### - `Chapter 1` - Details discussing the first chapter will be appended right here ...
+#### - `Chapter 1` -
+    - `Propositional Formula` - defined recursively by the atomic propositions represented by `p` to `z`, `T`, `F`, such that if `φ` and `ψ` are valid propositional formulas then so are:
+        - (`φ | ψ`)
+        - (`φ -> ψ`)
+        - (`φ & ψ`)
+        - (`~φ`)
