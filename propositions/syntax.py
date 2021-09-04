@@ -13,6 +13,10 @@ from typing import Mapping, Optional, Set, Tuple, Union
 
 from logic_utils import frozen, memoized_parameterless_method
 
+# constants:
+OPEN_BINARY_FORM = "("
+CLOSE_BINARY_FORM = ")"
+
 
 @lru_cache(maxsize=100)  # Cache the return value of is_variable
 def is_variable(string: str) -> bool:
@@ -118,6 +122,40 @@ class Formula:
             self.root, self.first, self.second = root, first, second
 
     @staticmethod
+    def negate_formula(formula: Formula) -> str:
+        """Negates a formula.
+
+        Parameters:
+            formula: A formula to negate.
+
+        Returns:
+            A string reresenting the formula negated.
+        """
+        return formula.root + Formula.formula_obj_to_string(formula.first)
+
+    @staticmethod
+    def create_binary_formula(
+        binary_operator: str, first_sub_formula: Formula, second_sub_formula: Formula
+    ) -> str:
+        """Assmebles a binary formula out of two sub-formulas.
+
+        Parameters:
+            binary_operator: The binary operator applied on the two sub-formulas.
+            first_sub_formula: The first sub-formula.
+            second_sub_formula: The second sub-formula.
+
+        Returns:
+            A string reresenting the suitable binary formula.
+        """
+        return (
+            OPEN_BINARY_FORM
+            + Formula.formula_obj_to_string(first_sub_formula)
+            + binary_operator
+            + Formula.formula_obj_to_string(second_sub_formula)
+            + CLOSE_BINARY_FORM
+        )
+
+    @staticmethod
     def formula_obj_to_string(formula: Formula) -> str:
         """Recursive function to assemble a string representation of the formula described by the
         a Formula object.
@@ -131,13 +169,11 @@ class Formula:
         if is_variable(formula.root) or is_constant(formula.root):
             return formula.root
         return (
-            formula.root + Formula.formula_obj_to_string(formula.first)
+            Formula.negate_formula(formula)
             if is_unary(formula.root)
-            else "("
-            + Formula.formula_obj_to_string(formula.first)
-            + formula.root
-            + Formula.formula_obj_to_string(formula.second)
-            + ")"
+            else Formula.create_binary_formula(
+                formula.root, formula.first, formula.second
+            )
         )
 
     @memoized_parameterless_method
