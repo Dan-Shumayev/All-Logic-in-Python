@@ -117,6 +117,29 @@ class Formula:
             assert first is not None and second is not None
             self.root, self.first, self.second = root, first, second
 
+    @staticmethod
+    def formula_obj_to_string(formula: Formula) -> str:
+        """Recursive function to assemble a string representation of the formula described by the
+        a Formula object.
+
+        Parameters:
+            formula: The Formula object to build the string repr. of.
+
+        Returns:
+            A string representing the formula object.
+        """
+        if is_variable(formula.root) or is_constant(formula.root):
+            return formula.root
+        return (
+            formula.root + Formula.formula_obj_to_string(formula.first)
+            if is_unary(formula.root)
+            else "("
+            + Formula.formula_obj_to_string(formula.first)
+            + formula.root
+            + Formula.formula_obj_to_string(formula.second)
+            + ")"
+        )
+
     @memoized_parameterless_method
     def __repr__(self) -> str:
         """Computes the string representation of the current formula.
@@ -125,6 +148,7 @@ class Formula:
             The standard string representation of the current formula.
         """
         # Task 1.1
+        return Formula.formula_obj_to_string(self)
 
     def __eq__(self, other: object) -> bool:
         """Compares the current formula with the given one.

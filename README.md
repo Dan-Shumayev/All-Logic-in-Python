@@ -16,4 +16,4 @@
     - (`φ & ψ`)
     - `~φ`
 
-    **Note:** The existence or non-existence of parentheses is compulsory.
+    **Note:** The existence or non-existence of parentheses is obligatory.
