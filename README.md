@@ -15,4 +15,5 @@
     - (`φ -> ψ`)
     - (`φ & ψ`)
     - `~φ`
+
     **Note:** The existence or non-existence of parentheses is compulsory.
