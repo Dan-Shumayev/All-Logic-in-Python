@@ -1,7 +1,7 @@
 {
-	"python.testing.pytestArgs": [
-		"."
-	],
+	"python.pythonPath": "C:/Users/fserv/.virtualenvs/Projects-HuQEBMoV/Scripts/python.exe",
+	"python.testing.pytestPath": "C:/Users/fserv/.virtualenvs/Projects-HuQEBMoV/Scripts/pytest.exe",
+	"python.linting.mypyPath": "C:/Users/fserv/.virtualenvs/Projects-HuQEBMoV/Scripts/mypy.exe",
 	"python.testing.unittestEnabled": false,
 	"python.testing.pytestEnabled": true,
 	"python.testing.autoTestDiscoverOnSaveEnabled": true,
