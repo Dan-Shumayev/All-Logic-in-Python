@@ -4,11 +4,13 @@
 # (c) Yannai A. Gonczarowski and Noam Nisan, 2017-2020
 # File name: propositions/syntax.py
 
+# TODO - Resolve the Mypy conflicts occured by Optional and non-Optional types
+
 """Syntactic handling of propositional formulas."""
 
 from __future__ import annotations
 
-from functools import lru_cache
+from functools import lru_cache  # cache last `maxsize` calls to the decorated func
 from typing import Mapping, Optional, Set, Tuple, Union
 
 from logic_utils import frozen, memoized_parameterless_method
@@ -213,6 +215,22 @@ class Formula:
     def __hash__(self) -> int:
         return hash(str(self))
 
+    @staticmethod
+    def extract_variables_from_formula(
+        formula: Formula, res: Set[str] = set()
+    ) -> Set[str]:
+        if is_variable(formula.root):
+            return res | {formula.root}
+        elif is_constant(formula.root):
+            return res  # Nothing to append - 'T'/'F' are not variables
+        return (
+            Formula.extract_variables_from_formula(formula.first, res)
+            if is_unary(formula.root)
+            # Binary case:
+            else Formula.extract_variables_from_formula(formula.first, res)
+            | Formula.extract_variables_from_formula(formula.second, res)
+        )
+
     @memoized_parameterless_method
     def variables(self) -> Set[str]:
         """Finds all atomic propositions (variables) in the current formula.
@@ -221,6 +239,7 @@ class Formula:
             A set of all atomic propositions used in the current formula.
         """
         # Task 1.2
+        return Formula.extract_variables_from_formula(self)
 
     @memoized_parameterless_method
     def operators(self) -> Set[str]:
