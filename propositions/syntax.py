@@ -219,6 +219,15 @@ class Formula:
     def extract_variables_from_formula(
         formula: Formula, res: Set[str] = set()
     ) -> Set[str]:
+        """
+
+        Parameters:
+            formula:
+            res:
+
+        Returns:
+
+        """
         if is_variable(formula.root):
             return res | {formula.root}
         elif is_constant(formula.root):
@@ -233,6 +242,11 @@ class Formula:
 
     @memoized_parameterless_method
     def variables(self) -> Set[str]:
+        """
+
+        Returns:
+
+        """
         """Finds all atomic propositions (variables) in the current formula.
 
         Returns:
@@ -240,6 +254,33 @@ class Formula:
         """
         # Task 1.2
         return Formula.extract_variables_from_formula(self)
+
+    @staticmethod
+    def extract_operators_from_formula(
+        formula: Formula, res: Set[str] = set()
+    ) -> Set[str]:
+        """
+
+        Parameters:
+            formula:
+            res:
+
+        Returns:
+
+        """
+        if is_constant(formula.root):
+            return res | {formula.root}
+        elif is_variable(formula.root):
+            return res  # Nothing to append - p..z possibly followed be digits are not operators
+        return (
+            # Unary case: '~' is possibly followed by 'T'/'F' operators
+            {"~"} | Formula.extract_operators_from_formula(formula.first)
+            if is_unary(formula.root)
+            # Binary case (append the binary operator):
+            else Formula.extract_operators_from_formula(formula.first, res)
+            | Formula.extract_operators_from_formula(formula.second, res)
+            | {formula.root}
+        )
 
     @memoized_parameterless_method
     def operators(self) -> Set[str]:
@@ -250,6 +291,7 @@ class Formula:
             current formula.
         """
         # Task 1.3
+        return Formula.extract_operators_from_formula(self)
 
     @staticmethod
     def _parse_prefix(string: str) -> Tuple[Union[Formula, None], str]:
