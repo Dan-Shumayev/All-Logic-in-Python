@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, Iterator, Set, Type, TypeVar, cast
 
 # TODO - Understand everything done below:
 
-T = TypeVar("T")
+T = TypeVar("T")  # Used for declaring a generic type
 
 
 def frozen(cls: Type[T]) -> Type[T]:
@@ -86,7 +86,7 @@ class frozendict(Dict[Any, Any]):
 
 S = TypeVar("S")
 
-
+# TODO - ask Noam why not to use the `lru_cache` instead.
 def memoized_parameterless_method(method: Callable[[T], S]) -> Callable[[T], S]:
     """A method decorator for parameterless methods of immutable classes that
     memoizes the return value to avoid recalculation.
