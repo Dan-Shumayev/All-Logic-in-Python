@@ -41,21 +41,4 @@
 	"editor.wordBasedSuggestions": true,
 	// Enable parameter hints
 	"editor.parameterHints.enabled": true,
-	"todohighlight.isEnable": true,
-	"todohighlight.keywordsPattern": "TODO",
-	"todohighlight.include": [
-		"**/*.py"
-	],
-	"todohighlight.exclude": [
-		"**/node_modules/**",
-		"**/bower_components/**",
-		"**/dist/**",
-		"**/build/**",
-		"**/.vscode/**",
-		"**/.github/**",
-		"**/_output/**",
-		"**/*.min.*",
-		"**/*.map",
-		"**/.next/**"
-	],
 }

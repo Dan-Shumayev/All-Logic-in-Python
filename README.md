@@ -17,3 +17,15 @@
     - `~φ`
 
     **Note:** The existence or non-existence of parentheses is obligatory.
+
+- `Recursive-Descent Parsing` - a way to parse various context-free languages including ours in this course. The idea behind this parser is that it dictates the suitable unique way of reading the rest of the formula according to the current token (`T`, `F`, `(`, `)`, `~`, `&`, `|`, `p`, `q76`).
+    - In general, given this formula:
+        - `(φ • ψ)`
+    - We recursively read it this way: upon encountering the open parenthesis `(`, we know this would be followed by formula `φ` (**the recursive aspect**), binary operator `•`, formula `ψ`, closing parenthesis `)`.
+    - In order for us to create a recursive descent parser, we first have to describe our logic's grammar. We'll define our syntax using a context-free grammar:
+        ```
+        Formula ::= (Formula BinaryOp Formula) | UnaryOp Formula | Var   ---   **Lowest precedence**
+        BinaryOp ::= (Formula&Formula) | (Formula&Formula) | (Formula->Formula)
+        UnaryOp ::= ~Var | ~Formula
+        Var ::= [p-z]   ---   **Highest precedence**
+        ```
