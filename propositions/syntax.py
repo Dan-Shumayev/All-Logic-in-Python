@@ -10,15 +10,11 @@
 # needed to be able to reference types before they're defined (forward declaration)
 from __future__ import annotations, generator_stop
 
-# from enum import Enum  # TokenType enumeration
 from functools import lru_cache  # cache last `maxsize` calls to the decorated func
 from re import compile as regex_compile
 from typing import Mapping, Optional, Set, Tuple, Union
 
 from logic_utils import frozen, memoized_parameterless_method
-
-# from dataclasses import dataclass  # NamedTuple-like with extra goodies
-
 
 # constants:
 OPEN_BINARY_FORM: str = "("
@@ -72,11 +68,6 @@ VARIABLE_RE = regex_compile(r"[p-z]+\d*")
 #     op: BinaryOp
 
 # ParserFormula = Union[Variable, Constant, UnaryFormula, BinaryFormula]
-######## End of trial to implement a firmer hierarchy ########
-
-# each parser will return the parsed element, tupled with
-# the remainder of the parsing
-
 
 # def parser_adapter_to_formula(formula_to_adapt: ParserFormula) -> Optional[Formula]:
 #     if isinstance(formula_to_adapt, Variable):
@@ -88,6 +79,11 @@ VARIABLE_RE = regex_compile(r"[p-z]+\d*")
 #             formula_to_adapt.op, formula_to_adapt.left, formula_to_adapt.right
 #         )
 #     return None
+
+######## End of trial to implement a firmer hierarchy ########
+
+# each parser will return the parsed element, tupled with
+# the remainder of the parsing
 
 
 def parse_formula(string_to_parse: str) -> FormulaPrefix:
