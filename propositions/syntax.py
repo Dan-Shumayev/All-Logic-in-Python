@@ -36,51 +36,6 @@ UNARY_OP_RE = regex_compile(r"~")
 CONSTANT_RE = regex_compile(r"T|F")
 VARIABLE_RE = regex_compile(r"[p-z]+\d*")
 
-######## Start of my trial to implement a firmer hierarchy as befits a RD parser ########
-# class TokenType(str, Enum):
-#     And: str = "&"
-#     Or: str = "|"
-#     Imply: str = "->"
-#     Neg: str = "~"
-#     T: str = "T"
-#     F: str = "F"
-
-
-##### Token types: #####
-# BinaryOp = Union[TokenType.And, TokenType.Or, TokenType.Imply]
-# UnaryOp = Union[TokenType.Neg]
-
-#### Tokens: ####
-# Variable = str
-
-# Constant = Union[TokenType.T, TokenType.F]
-
-# @dataclass
-# class UnaryFormula:
-#     op: UnaryOp
-#     operand: Optional[Formula]  # To follow the typing of Formula class,
-#     # though it doesn't make sense for this field to be None
-
-# @dataclass
-# class BinaryFormula:
-#     left: Optional[Formula]
-#     right: Optional[Formula]
-#     op: BinaryOp
-
-# ParserFormula = Union[Variable, Constant, UnaryFormula, BinaryFormula]
-
-# def parser_adapter_to_formula(formula_to_adapt: ParserFormula) -> Optional[Formula]:
-#     if isinstance(formula_to_adapt, Variable):
-#         return Formula(formula_to_adapt, None, None)
-#     if isinstance(formula_to_adapt, UnaryFormula):
-#         return Formula(formula_to_adapt.op, formula_to_adapt.operand, None)
-#     if isinstance(formula_to_adapt, BinaryFormula):
-#         return Formula(
-#             formula_to_adapt.op, formula_to_adapt.left, formula_to_adapt.right
-#         )
-#     return None
-
-######## End of trial to implement a firmer hierarchy ########
 
 # each parser will return the parsed element, tupled with
 # the remainder of the parsing
@@ -100,19 +55,10 @@ def parse_formula(string_to_parse: str) -> FormulaPrefix:
         # BinaryOp -> Lowest precedence -> Rooted as ancestor of other operations
         # that have higher precdence (UnaryOp/Var)
         return parse_binary_formula(string_to_parse)
-        # binary_formula, remainder = parse_binary_formula(string_to_parse)
-        # return parser_adapter_to_formula(binary_formula), remainder
     elif UNARY_OP_RE.match(string_to_parse):
         return parse_unary_formula(string_to_parse)
-        # unary_formula, remainder = parse_unary_formula(string_to_parse)
-        # return parser_adapter_to_formula(unary_formula), remainder
     elif VARIABLE_RE.match(string_to_parse) or CONSTANT_RE.match(string_to_parse):
         return parse_variable_constant(string_to_parse)
-        # var_or_const, remainder = parse_variable_constant(string_to_parse)
-        # return (
-        #     parser_adapter_to_formula(var_or_const),
-        #     remainder,
-        # )
     else:
         return None, string_to_parse
 
@@ -159,7 +105,6 @@ def parse_binary_formula(string_to_parse: str) -> FormulaPrefix:
         )
 
     return Formula(op, left, right), right_remainder[1:]
-    # return BinaryFormula(left=left, right=right, op=op), right_remainder[1:]
 
 
 def parse_unary_formula(string_to_parse: str) -> FormulaPrefix:
@@ -178,7 +123,6 @@ def parse_unary_formula(string_to_parse: str) -> FormulaPrefix:
 
     operand, remainder = parse_formula(op_remainder)
     return (Formula(op, operand, None), remainder) if operand else (None, op)
-    # return UnaryFormula(op=op, operand=operand), remainder
 
 
 def parse_variable_constant(
