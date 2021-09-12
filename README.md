@@ -24,8 +24,9 @@
     - We recursively read it this way: upon encountering the open parenthesis `(`, we know this would be followed by formula `φ` (**the recursive aspect**), binary operator `•`, formula `ψ`, closing parenthesis `)`.
     - In order for us to create a recursive descent parser, we first have to describe our logic's grammar. We'll define our syntax using a context-free grammar:
         ```
-        Formula ::= (Formula BinaryOp Formula) | UnaryOp Formula | Var   ---   **Lowest precedence**
+        Formula ::= (Formula BinaryOp Formula) | UnaryOp Formula | Constant | Var   ---   **Lowest precedence**
         BinaryOp ::= (Formula&Formula) | (Formula&Formula) | (Formula->Formula)
-        UnaryOp ::= ~Var | ~Formula
-        Var ::= [p-z]   ---   **Highest precedence**
+        UnaryOp ::= ~Var | ~Constant | ~Formula
+        Constant ::= T | F
+        Var ::= [p-z]+[0-9]*   ---   **Highest precedence**
         ```

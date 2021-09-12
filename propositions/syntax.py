@@ -24,10 +24,11 @@ CLOSE_BINARY_FORM: str = ")"
 ###### RD Parser ######
 # A simple RD parser for the following grammar:
 #
-# Formula ::= (Formula BinaryOp Formula) | ~Formula | Var ---**Lowest precedence**
+# Formula ::= (Formula BinaryOp Formula) | ~Formula | Constant | Var --- **Lowest precedence**
 # BinaryOp ::= (Formula&Formula) | (Formula|Formula) | (Formula->Formula)
-# UnaryOp ::= ~Var | ~Formula
-# Var ::= [p-z]   ---   **Highest precedence**
+# UnaryOp ::= ~Var | ~Constant | ~Formula
+# Constant ::= T | F
+# Var ::= [p-z]+[0-9]*   ---   **Highest precedence**
 
 
 ##### Regexes to match the respective tokens #####
@@ -125,7 +126,7 @@ def parse_unary_formula(string_to_parse: str) -> FormulaPrefix:
     return (
         (Formula(op, operand, None), remainder)
         if operand
-        else (None, "~ operator is expected to be followed by variable or constant")
+        else (None, "~ operator is expected to be followed by a variable or constant")
     )
 
 
