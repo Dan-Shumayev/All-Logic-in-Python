@@ -122,7 +122,11 @@ def parse_unary_formula(string_to_parse: str) -> FormulaPrefix:
     op_remainder: str = string_to_parse[match.end(0) :]
 
     operand, remainder = parse_formula(op_remainder)
-    return (Formula(op, operand, None), remainder) if operand else (None, op)
+    return (
+        (Formula(op, operand, None), remainder)
+        if operand
+        else (None, "~ operator is expected to be followed by variable or constant")
+    )
 
 
 def parse_variable_constant(
@@ -137,15 +141,25 @@ def parse_variable_constant(
 
     """
     match_var = VARIABLE_RE.match(string_to_parse)
-    if match_var:
+    if match_var:  # Variable
         return match_string_and_remainder(match_var, string_to_parse)
 
+    # Otherwise, Constant - T/F
     match_const = CONSTANT_RE.match(string_to_parse)
     assert match_const, "Expected to start with variable or constant"
     return match_string_and_remainder(match_const, string_to_parse)
 
 
-def match_string_and_remainder(match_token, string_to_parse):
+def match_string_and_remainder(match_token, string_to_parse: str) -> FormulaPrefix:
+    """
+
+    Parameters:
+        match_token:
+        string_to_parse:
+
+    Returns:
+
+    """
     root: str = match_token.group(0)
     remainder: str = string_to_parse[match_token.end(0) :]
     return Formula(root, None, None), remainder
@@ -459,6 +473,8 @@ class Formula:
             representation of a formula, ``False`` otherwise.
         """
         # Task 1.5
+        parsed_prefix: FormulaPrefix = Formula._parse_prefix(string)
+        return parsed_prefix[0] != None and parsed_prefix[1] == ""
 
     @staticmethod
     def parse(string: str) -> Formula:
@@ -472,6 +488,7 @@ class Formula:
         """
         assert Formula.is_formula(string)
         # Task 1.6
+        return Formula._parse_prefix(string)[0]  # type: ignore
 
     # Optional tasks for Chapter 1
 
