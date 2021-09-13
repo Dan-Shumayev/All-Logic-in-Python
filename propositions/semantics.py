@@ -71,11 +71,39 @@ def evaluate(formula: Formula, model: Model) -> bool:
     if is_variable(formula.root):
         return model[formula.root]
     if is_unary(formula.root):
-        return not evaluate(
-            Formula._parse_prefix(Formula.formula_obj_to_string(formula)[1:])[0],
-            model,
-        )
+        return evaluate_unary_formula(formula, model)
 
+    return evaluate_binary_formula(formula, model)
+
+
+def evaluate_unary_formula(formula: Formula, model: Model) -> bool:
+    """Evaluates the value of a unary formula.
+
+    Parameters:
+        formula: the formula to evaluate.
+        model: the model we evaluate with respect to.
+
+    Returns:
+        True iff the negated formula is False.
+    """
+    formula_as_string: str = Formula.formula_obj_to_string(formula)
+    negated_formula: Formula = Formula._parse_prefix(formula_as_string[1:])[0]
+    return not evaluate(negated_formula, model)
+
+
+def evaluate_binary_formula(formula: Formula, model: Model) -> bool:
+    """Evaluates the value of a binary formula.
+
+    Parameters:
+        formula: the formula to evaluate.
+        model: the model we evaluate with respect to.
+
+    Returns:
+        If (φ = ε • ψ), then φ's value is True iff the value of
+        (either - |/both - &) ε and ψ is True in M.
+        If (φ = ψ -> ε), then φ's value is True if either φ (in M)
+        False or if the value of ε (in M) is True.
+    """
     binary_op: str = formula.root  # & | ->
     if binary_op == "&":
         return evaluate(formula.first, model) and evaluate(
@@ -83,6 +111,7 @@ def evaluate(formula: Formula, model: Model) -> bool:
         )
     if binary_op == "|":
         return evaluate(formula.first, model) or evaluate(formula.second, model)
+    # ->
     return not evaluate(formula.first, model) or evaluate(formula.second, model)
 
 
