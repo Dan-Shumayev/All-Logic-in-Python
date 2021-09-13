@@ -152,6 +152,10 @@ def truth_values(formula: Formula, models: Iterable[Model]) -> Iterable[bool]:
         [True, True, True, False]
     """
     # Task 2.3
+    truth_table: List[bool] = []
+    for model in models:
+        truth_table += [evaluate(formula, model)]
+    return truth_table
 
 
 def print_truth_table(formula: Formula) -> None:
