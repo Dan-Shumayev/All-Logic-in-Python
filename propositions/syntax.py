@@ -10,7 +10,9 @@
 # needed to be able to reference types before they're defined (forward declaration)
 from __future__ import annotations, generator_stop
 
-from functools import lru_cache  # cache last `maxsize` calls to the decorated func
+from functools import (
+    lru_cache,
+)  # cache last `maxsize` calls to the decorated func
 from re import compile as regex_compile
 from typing import Mapping, Optional, Set, Tuple, Union
 
@@ -21,149 +23,157 @@ OPEN_BINARY_FORM: str = "("
 CLOSE_BINARY_FORM: str = ")"
 
 
-###### RD Parser ######
-# A simple RD parser for the following grammar:
-#
-# Formula ::= (Formula BinaryOp Formula) | ~Formula | Constant | Var --- **Lowest precedence**
-# BinaryOp ::= (Formula&Formula) | (Formula|Formula) | (Formula->Formula)
-# UnaryOp ::= ~Var | ~Constant | ~Formula
-# Constant ::= T | F
-# Var ::= [p-z]+[0-9]*   ---   **Highest precedence**
-
-
-##### Regexes to match the respective tokens #####
-BINARY_OP_RE = regex_compile(r"&|->|\|")
-UNARY_OP_RE = regex_compile(r"~")
-CONSTANT_RE = regex_compile(r"T|F")
-VARIABLE_RE = regex_compile(r"[p-z]+\d*")
-
-
-# each parser will return the parsed element, tupled with
-# the remainder of the parsing
-
-
-def parse_formula(string_to_parse: str) -> FormulaPrefix:
-    """Parses a string to its respective Formula object, tupled with its remainder
-    which isn't derived by our logic's grammar.
-
-    Parameters:
-        formula_to_parse: The string to parse.
-
-    Returns:
-        A tuple of Formula object with its string remainder if exists (None if not).
+class Parser:
     """
-    if string_to_parse.startswith(OPEN_BINARY_FORM):
-        # BinaryOp -> Lowest precedence -> Rooted as ancestor of other operations
-        # that have higher precdence (UnaryOp/Var)
-        return parse_binary_formula(string_to_parse)
-    elif UNARY_OP_RE.match(string_to_parse):
-        return parse_unary_formula(string_to_parse)
-    elif VARIABLE_RE.match(string_to_parse) or CONSTANT_RE.match(string_to_parse):
-        return parse_variable_constant(string_to_parse)
-    else:
+    ###### Recursive-Descent Parser ######
+    # A simple RD parser for the following grammar:
+    #
+    # Formula ::= (Formula BinaryOp Formula) | ~Formula | Constant | Var -- **Lowest precedence**
+    # BinaryOp ::= (Formula&Formula) | (Formula|Formula) | (Formula->Formula)
+    # UnaryOp ::= ~Var | ~Constant | ~Formula
+    # Constant ::= T | F
+    # Var ::= [p-z]+[0-9]*   ---   **Highest precedence**
+    """
+
+    ##### Regexes to match the respective tokens #####
+    BINARY_OP_RE = regex_compile(r"&|->|\|")
+    UNARY_OP_RE = regex_compile(r"~")
+    CONSTANT_RE = regex_compile(r"T|F")
+    VARIABLE_RE = regex_compile(r"[p-z]+\d*")
+
+    # each parser will return the parsed element, tupled with
+    # the remainder of the parsing
+
+    def parse_formula(self, string_to_parse: str) -> FormulaPrefix:
+        """Parses a string to its respective Formula object, tupled with its remainder
+        which isn't derived by our logic's grammar.
+
+        Parameters:
+            formula_to_parse: The string to parse.
+
+        Returns:
+            A tuple of Formula object with its string remainder if exists (None if not).
+        """
+        if string_to_parse.startswith(OPEN_BINARY_FORM):
+            # BinaryOp -> Lowest precedence -> Rooted as ancestor of other operations
+            # that have higher precdence (UnaryOp/Var)
+            return self.parse_binary_formula(string_to_parse)
+        if Parser.UNARY_OP_RE.match(string_to_parse):
+            return self.parse_unary_formula(string_to_parse)
+        if Parser.VARIABLE_RE.match(
+            string_to_parse
+        ) or Parser.CONSTANT_RE.match(string_to_parse):
+            return self.parse_variable_constant(string_to_parse)
+
         return None, string_to_parse
 
+    def parse_binary_formula(self, string_to_parse: str) -> FormulaPrefix:
+        """Parses a string to its respective tree-like structure that is compatible
+        with a binary operator grammar rules. The binray operator is the father of
+        the left-hand side Formula (the left child) and the right-hand side Formula
+        (the right child).
 
-def parse_binary_formula(string_to_parse: str) -> FormulaPrefix:
-    """Parses a string to its respective tree-like structure that is compatible
-    with a binary operator grammar rules. The binray operator is the father of
-    the left-hand side Formula (the left child) and the right-hand side Formula
-    (the right child).
+        Parameters:
+            formula_to_parse: The string to parse.
 
-    Parameters:
-        formula_to_parse: The string to parse.
+        Returns:
+            A tuple of the BinaryFormula prefix and its remainder string.
+        """
+        assert string_to_parse.startswith(
+            OPEN_BINARY_FORM
+        ), "Expected binary formula to begin with '('"
 
-    Returns:
-        A tuple of the BinaryFormula prefix and its remainder string.
-    """
-    assert string_to_parse.startswith(
-        OPEN_BINARY_FORM
-    ), "Expected binary formula to begin with '('"
+        left, left_remainder = self.parse_formula(string_to_parse[1:])
 
-    left, left_remainder = parse_formula(string_to_parse[1:])
+        match = Parser.BINARY_OP_RE.match(left_remainder)
+        if not match:
+            return (
+                None,
+                "Expected the remainder of the lefthand side of the binary"
+                " formula to begin with a binary operator",
+            )
 
-    match = BINARY_OP_RE.match(left_remainder)
-    if not match:
+        op: str = match.group(0)
+        # MatchObject.end(0) will return the index of the
+        # first character that wasn't matched by the regex, which should
+        # be the first letter after the operator.
+        op_remainder: str = left_remainder[match.end(0) :]
+        assert (
+            op_remainder
+        ), "The remainder of the binary operator should be non empty"
+
+        right, right_remainder = self.parse_formula(op_remainder)
+        if not right_remainder.startswith(CLOSE_BINARY_FORM):
+            return (
+                None,
+                "The remainder of the righthand side of "
+                "the binary formula should start with ')''",
+            )
+
+        return Formula(op, left, right), right_remainder[1:]
+
+    def parse_unary_formula(self, string_to_parse: str) -> FormulaPrefix:
+        """Parses a unary formula :: ~Formula.
+
+        Parameters:
+            string_to_parse: The string to parse.
+
+        Returns:
+            A tuple of the UnaryFormula prefix and its remainder string.
+        """
+        match = Parser.UNARY_OP_RE.match(string_to_parse)
+        assert match, "Expected to start with a unary operator"
+        op: str = match.group(0)
+        op_remainder: str = string_to_parse[match.end(0) :]
+
+        operand, remainder = self.parse_formula(op_remainder)
         return (
-            None,
-            "Expected the remainder of the lefthand side of the binary formula "
-            "to begin with a binary operator",
+            (Formula(op, operand, None), remainder)
+            if operand
+            else (
+                None,
+                "~ operator is expected to be followed by a variable or"
+                " constant",
+            )
         )
 
-    op: str = match.group(0)
-    # MatchObject.end(0) will return the index of the
-    # first character that wasn't matched by the regex, which should
-    # be the first letter after the operator.
-    op_remainder: str = left_remainder[match.end(0) :]
-    assert op_remainder, "The remainder of the binary operator should be non empty"
+    def parse_variable_constant(
+        self,
+        string_to_parse: str,
+    ) -> FormulaPrefix:
+        """Parses a variable ([p-z]) or constant (T|F).
 
-    right, right_remainder = parse_formula(op_remainder)
-    if not right_remainder.startswith(CLOSE_BINARY_FORM):
-        return (
-            None,
-            "The remainder of the righthand side of "
-            "the binary formula should start with ')''",
-        )
+        Parameters:
+            string_to_parse: The string to parse.
 
-    return Formula(op, left, right), right_remainder[1:]
+        Returns:
+            A Variable/Constant Formula object along with its string remainder.
+        """
+        match_var = Parser.VARIABLE_RE.match(string_to_parse)
+        if match_var:  # Variable
+            return Parser.match_string_and_remainder(match_var, string_to_parse)
 
+        # Otherwise, Constant - T/F
+        match_const = Parser.CONSTANT_RE.match(string_to_parse)
+        assert match_const, "Expected to start with variable or constant"
+        return Parser.match_string_and_remainder(match_const, string_to_parse)
 
-def parse_unary_formula(string_to_parse: str) -> FormulaPrefix:
-    """
+    @staticmethod
+    def match_string_and_remainder(
+        match_token, string_to_parse: str
+    ) -> FormulaPrefix:
+        """Matches a logical token in the beginning of a string.
 
-    Parameters:
-        string_to_parse: The string to parse.
+        Parameters:
+            match_token: The RegexMatch object to fetch the match from.
+            string_to_parse: The string from which we matched the token.
 
-    Returns:
-        A tuple of the UnaryFormula prefix and its remainder string.
-    """
-    match = UNARY_OP_RE.match(string_to_parse)
-    assert match, "Expected to start with a unary operator"
-    op: str = match.group(0)
-    op_remainder: str = string_to_parse[match.end(0) :]
-
-    operand, remainder = parse_formula(op_remainder)
-    return (
-        (Formula(op, operand, None), remainder)
-        if operand
-        else (None, "~ operator is expected to be followed by a variable or constant")
-    )
-
-
-def parse_variable_constant(
-    string_to_parse: str,
-) -> FormulaPrefix:
-    """
-
-    Parameters:
-        string_to_parse: The string to parse.
-
-    Returns:
-
-    """
-    match_var = VARIABLE_RE.match(string_to_parse)
-    if match_var:  # Variable
-        return match_string_and_remainder(match_var, string_to_parse)
-
-    # Otherwise, Constant - T/F
-    match_const = CONSTANT_RE.match(string_to_parse)
-    assert match_const, "Expected to start with variable or constant"
-    return match_string_and_remainder(match_const, string_to_parse)
-
-
-def match_string_and_remainder(match_token, string_to_parse: str) -> FormulaPrefix:
-    """
-
-    Parameters:
-        match_token:
-        string_to_parse:
-
-    Returns:
-
-    """
-    root: str = match_token.group(0)
-    remainder: str = string_to_parse[match_token.end(0) :]
-    return Formula(root, None, None), remainder
+        Returns:
+            The match token tupled with its remainder as a string.
+        """
+        root: str = match_token.group(0)
+        remainder: str = string_to_parse[match_token.end(0) :]
+        return Formula(root, None, None), remainder
 
 
 ###### End of RD Parser ######
@@ -197,7 +207,7 @@ def is_constant(string: str) -> bool:
     Returns:
         ``True`` if the given string is a constant, ``False`` otherwise.
     """
-    return string == "T" or string == "F"
+    return string in ("T", "F")
 
 
 @lru_cache(maxsize=100)  # Cache the return value of is_unary
@@ -223,14 +233,14 @@ def is_binary(string: str) -> bool:
     Returns:
         ``True`` if the given string is a binary operator, ``False`` otherwise.
     """
-    return string == "&" or string == "|" or string == "->"
+    return string in ("&", "|", "->")
     # For Chapter 3:
     # return string in {'&', '|',  '->', '+', '<->', '-&', '-|'}
 
 
 @frozen
 class Formula:
-    """An immutable propositional formula in tree representation, composed from
+    r"""An immutable propositional formula in tree representation, composed from
     atomic propositions, and operators applied to them.
 
     Attributes:
@@ -286,7 +296,9 @@ class Formula:
 
     @staticmethod
     def create_binary_formula(
-        binary_operator: str, first_sub_formula: Formula, second_sub_formula: Formula
+        binary_operator: str,
+        first_sub_formula: Formula,
+        second_sub_formula: Formula,
     ) -> str:
         """Assmebles a binary formula out of two sub-formulas.
 
@@ -308,8 +320,8 @@ class Formula:
 
     @staticmethod
     def formula_obj_to_string(formula: Formula) -> str:
-        """Recursive function to assemble a string representation of the formula described by the
-        Formula object.
+        """Recursive function to assemble a string representation of the
+        formula described by the Formula object.
 
         Parameters:
             formula: The Formula object to build the string repr. of.
@@ -379,8 +391,9 @@ class Formula:
         """
         if is_variable(formula.root):
             return res | {formula.root}
-        elif is_constant(formula.root):
-            return res  # Nothing to append - 'T'/'F' are not variables
+        if is_constant(formula.root):
+            # Nothing to append - 'T'/'F' are not variables
+            return res
         return (
             Formula.extract_variables_from_formula(formula.first, res)  # type: ignore
             if is_unary(formula.root)
@@ -391,11 +404,6 @@ class Formula:
 
     @memoized_parameterless_method
     def variables(self) -> Set[str]:
-        """
-
-        Returns:
-
-        """
         """Finds all atomic propositions (variables) in the current formula.
 
         Returns:
@@ -419,7 +427,7 @@ class Formula:
         """
         if is_constant(formula.root):
             return res | {formula.root}
-        elif is_variable(formula.root):
+        if is_variable(formula.root):
             return res  # Nothing to append - p..z possibly followed be digits are not operators
         return (
             # Unary case: '~' is possibly followed by 'T'/'F' operators
@@ -460,7 +468,7 @@ class Formula:
             is a string with some human-readable content.
         """
         # Task 1.4
-        return parse_formula(string)
+        return Parser().parse_formula(string)
 
     @staticmethod
     def is_formula(string: str) -> bool:
@@ -475,7 +483,7 @@ class Formula:
         """
         # Task 1.5
         parsed_prefix: FormulaPrefix = Formula._parse_prefix(string)
-        return parsed_prefix[0] != None and parsed_prefix[1] == ""
+        return parsed_prefix[0] is not None and parsed_prefix[1] == ""
 
     @staticmethod
     def parse(string: str) -> Formula:
@@ -513,7 +521,9 @@ class Formula:
         """
         # Optional Task 1.8
 
-    def substitute_variables(self, substitution_map: Mapping[str, Formula]) -> Formula:
+    def substitute_variables(
+        self, substitution_map: Mapping[str, Formula]
+    ) -> Formula:
         """Substitutes in the current formula, each variable `v` that is a key
         in `substitution_map` with the formula `substitution_map[v]`.
 
@@ -536,7 +546,9 @@ class Formula:
             assert is_variable(variable)
         # Task 3.3
 
-    def substitute_operators(self, substitution_map: Mapping[str, Formula]) -> Formula:
+    def substitute_operators(
+        self, substitution_map: Mapping[str, Formula]
+    ) -> Formula:
         """Substitutes in the current formula, each constant or operator `op`
         that is a key in `substitution_map` with the formula
         `substitution_map[op]` applied to its (zero or one or two) operands,
@@ -559,7 +571,11 @@ class Formula:
             ~(~~(~x|~y)|~~z)
         """
         for operator in substitution_map:
-            assert is_binary(operator) or is_unary(operator) or is_constant(operator)
+            assert (
+                is_binary(operator)
+                or is_unary(operator)
+                or is_constant(operator)
+            )
             assert substitution_map[operator].variables().issubset({"p", "q"})
         # Task 3.4
 

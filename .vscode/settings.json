@@ -15,7 +15,10 @@
 	"python.formatting.provider": "black",
 	"python.formatting.blackArgs": [
 		"-t",
-		"py37"
+		"py37",
+		"--line-length",
+		"80",
+		"--experimental-string-processing"
 	],
 	// Controls if quick suggestions should show up while typing
 	"editor.quickSuggestions": {
