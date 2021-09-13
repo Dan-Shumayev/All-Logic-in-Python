@@ -7,10 +7,10 @@
 """Semantic analysis of propositional-logic constructs."""
 
 from itertools import product as it_product
-from typing import AbstractSet, Iterable, Mapping, Sequence
+from typing import AbstractSet, Iterable, List, Mapping, Sequence
 
-from propositions.proofs import *
-from propositions.syntax import *
+from .proofs import *
+from .syntax import *
 
 #: A model for propositional-logic formulas, a mapping from variable names to
 #: truth values.
@@ -72,7 +72,7 @@ def evaluate(formula: Formula, model: Model) -> bool:
     if is_variable(formula.root):
         return model[formula.root]
     if is_unary(formula.root):
-        return not evaluate(formula.first, model)
+        return not evaluate(formula.first, model)  # type: ignore
 
     return evaluate_binary_formula(formula, model)
 
@@ -92,13 +92,11 @@ def evaluate_binary_formula(formula: Formula, model: Model) -> bool:
     """
     binary_op: str = formula.root  # & | ->
     if binary_op == "&":
-        return evaluate(formula.first, model) and evaluate(
-            formula.second, model
-        )
+        return evaluate(formula.first, model) and evaluate(formula.second, model)  # type: ignore
     if binary_op == "|":
-        return evaluate(formula.first, model) or evaluate(formula.second, model)
+        return evaluate(formula.first, model) or evaluate(formula.second, model)  # type: ignore
     # ->
-    return not evaluate(formula.first, model) or evaluate(formula.second, model)
+    return not evaluate(formula.first, model) or evaluate(formula.second, model)  # type: ignore
 
 
 def all_models(variables: Sequence[str]) -> Iterable[Model]:
@@ -175,6 +173,32 @@ def print_truth_table(formula: Formula) -> None:
         | T | T   | F        |
     """
     # Task 2.4
+    formula_to_string: str = Formula.formula_obj_to_string(formula)
+    boolean_to_string: Mapping[bool, str] = {True: "T", False: "F"}
+    formula_variables: List[str] = list(formula.variables())
+    formula_variables.sort()
+    for variable in formula_variables:
+        print(f"| {variable} ", end="")
+    print(f"| {formula_to_string} |")
+
+    print("|", end="")
+    for variable in formula_variables:
+        print("-" * (len(variable) + 2), end="")
+        print("|", end="")
+    print("-" * (len(formula_to_string) + 2), end="")
+    print("|")
+
+    for model in all_models(formula_variables):
+        for variable in model.keys():
+            print(
+                f"| {boolean_to_string[model.get(variable)]}"
+                + " " * len(variable),
+                end="",
+            )
+        first_part = f"| {boolean_to_string[evaluate(formula, model)]}"
+        second_part = " " * len(formula_to_string) + "|"
+        final_part = first_part + second_part
+        print(final_part)
 
 
 def is_tautology(formula: Formula) -> bool:

@@ -8,9 +8,9 @@
 
 from logic_utils import frozendict
 
-from propositions.axiomatic_systems import *
-from propositions.semantics import *
-from propositions.syntax import *
+from .axiomatic_systems import *
+from .semantics import *
+from .syntax import *
 
 
 def test_evaluate(debug=True):
