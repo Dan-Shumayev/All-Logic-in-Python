@@ -6,7 +6,8 @@
 
 """Semantic analysis of propositional-logic constructs."""
 
-from typing import AbstractSet, Iterable, Iterator, Mapping, Sequence, Tuple
+from itertools import product as it_product
+from typing import AbstractSet, Iterable, Mapping, Sequence
 
 from propositions.proofs import *
 from propositions.syntax import *
@@ -113,14 +114,25 @@ def all_models(variables: Sequence[str]) -> Iterable[Model]:
 
     Examples:
         >>> list(all_models(['p', 'q']))
-        [{'p': False, 'q': False}, {'p': False, 'q': True}, {'p': True, 'q': False}, {'p': True, 'q': True}]
+        [{'p': False, 'q': False}, {'p': False, 'q': True},
+         {'p': True, 'q': False}, {'p': True, 'q': True}]
 
         >>> list(all_models(['q', 'p']))
-        [{'q': False, 'p': False}, {'q': False, 'p': True}, {'q': True, 'p': False}, {'q': True, 'p': True}]
+        [{'q': False, 'p': False}, {'q': False, 'p': True},
+         {'q': True, 'p': False}, {'q': True, 'p': True}]
     """
     for v in variables:
         assert is_variable(v)
     # Task 2.2
+    models: List[Model] = []
+    permutations = it_product([False, True], repeat=len(variables))
+    for permutation in permutations:
+        possible_model: Model = {
+            var: permutation[index] for index, var in enumerate(variables)
+        }
+        models.append(possible_model)
+
+    return models
 
 
 def truth_values(formula: Formula, models: Iterable[Model]) -> Iterable[bool]:
