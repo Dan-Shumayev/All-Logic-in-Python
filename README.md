@@ -8,7 +8,7 @@
         * A data structure implemented in Python
 
 
-#### - `Chapter 1` -
+#### - `Chapter 1` - **Syntax**
 - `Propositional Formula` - defined recursively by the atomic propositions represented by `p` to `z` (possibly followed by any amount of digits), `T`, `F`, such that if `φ` and `ψ` are valid propositional formulas then so are:
 
     - (`φ | ψ`)
@@ -30,4 +30,12 @@
         Constant ::= T | F
         Var ::= [p-z]+[0-9]*   ---   **Highest precedence**
         ```
-#### - `Chapter 2` -
+#### - `Chapter 2` - **Semantics**
+- `Model` - We define it as a function taking a set of atomic propositions to {True, False} (aka `T` and `F` in our syntax). Put simply, it's a set of propositions.
+    - The value of a proposition in a Model is defined recursively:
+        - **Base case** - `T`, `F` gets the value of `True` and `False` respectively.
+        - **The recursion step** - inspect the type of the token we're dealing with such that:
+            - If `φ` is a variable, we apply the Model function (`M`) on it, resulting in its value.
+            - If `φ=~ψ`, then `φ` is `True` iff `M(ψ)` is `False`(which is in its turn determined by the former case).
+            - If `(φ = ε • ψ)`, then `φ`'s value is `True` iff the value of (either - `|`/both - `&`) `ε` and `ψ` is `True` in `M`.
+            - If `(φ = ψ -> ε)`, then `φ`'s value is `True` if either `φ` (in `M`) `False` or if the value of `ε` (in `M`) is `True`.

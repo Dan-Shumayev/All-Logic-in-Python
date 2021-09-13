@@ -66,6 +66,24 @@ def evaluate(formula: Formula, model: Model) -> bool:
     assert is_model(model)
     assert formula.variables().issubset(variables(model))
     # Task 2.1
+    if is_constant(formula.root):
+        return True if formula.root == "T" else False
+    if is_variable(formula.root):
+        return model[formula.root]
+    if is_unary(formula.root):
+        return not evaluate(
+            Formula._parse_prefix(Formula.formula_obj_to_string(formula)[1:])[0],
+            model,
+        )
+
+    binary_op: str = formula.root  # & | ->
+    if binary_op == "&":
+        return evaluate(formula.first, model) and evaluate(
+            formula.second, model
+        )
+    if binary_op == "|":
+        return evaluate(formula.first, model) or evaluate(formula.second, model)
+    return not evaluate(formula.first, model) or evaluate(formula.second, model)
 
 
 def all_models(variables: Sequence[str]) -> Iterable[Model]:
