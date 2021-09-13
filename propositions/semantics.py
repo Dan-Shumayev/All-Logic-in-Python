@@ -71,24 +71,9 @@ def evaluate(formula: Formula, model: Model) -> bool:
     if is_variable(formula.root):
         return model[formula.root]
     if is_unary(formula.root):
-        return evaluate_unary_formula(formula, model)
+        return not evaluate(formula.first, model)
 
     return evaluate_binary_formula(formula, model)
-
-
-def evaluate_unary_formula(formula: Formula, model: Model) -> bool:
-    """Evaluates the value of a unary formula.
-
-    Parameters:
-        formula: the formula to evaluate.
-        model: the model we evaluate with respect to.
-
-    Returns:
-        True iff the negated formula is False.
-    """
-    formula_as_string: str = Formula.formula_obj_to_string(formula)
-    negated_formula: Formula = Formula._parse_prefix(formula_as_string[1:])[0]
-    return not evaluate(negated_formula, model)
 
 
 def evaluate_binary_formula(formula: Formula, model: Model) -> bool:
