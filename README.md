@@ -30,16 +30,19 @@
         Constant ::= T | F
         Var ::= [p-z]+[0-9]*   ---   **Highest precedence**
         ```
-        **Note:** In my RD-parser I didn't use a `lexer` (as a separate entity) in order to classify the tokens and iterating over them. There would be at least 2 advantages of doing that:
+    **Note:** In my RD-parser I didn't use a `lexer` (as a separate entity) in order to classify the tokens and iterating over them. There would be at least 2 advantages of doing that:
 
-        - A `lexer` separates the input into tokens which carry additional information: the token type and the exact position of the token in the input string. We can use this position information to generate detailed error messages. This is time saved for the future users of the parser.
-        - We could use Python's own `lexer` and filter the stream of tokens, thus using an extremely robust `lexer` (`tokenizer.tokenize` and `io.BytesIO`).
+    - A `lexer` separates the input into tokens which carry additional information: the token type and the exact position of the token in the input string. We can use this position information to generate detailed error messages. This is time saved for the future users of the parser.
+    - We could use Python's own `lexer` and filter the stream of tokens, thus using an extremely robust `lexer` (`tokenizer.tokenize` and `io.BytesIO`).
 #### - `Chapter 2` - **Semantics**
 - `Model` - We define it as a function taking a set of atomic propositions to {True, False} (aka `T` and `F` in our syntax). Put simply, it's a set of propositions.
-    - The value of a proposition in a Model is defined recursively:
+    - The **value of a proposition** in a Model is defined recursively:
         - **Base case** - `T`, `F` gets the value of `True` and `False` respectively.
         - **The recursion step** - inspect the type of the token we're dealing with such that:
             - If `φ` is a variable, we apply the Model function (`M`) on it, resulting in its value.
             - If `φ=~ψ`, then `φ` is `True` iff `M(ψ)` is `False`(which is in its turn determined by the former case).
             - If `(φ = ε • ψ)`, then `φ`'s value is `True` iff the value of (either - `|`/both - `&`) `ε` and `ψ` is `True` in `M`.
             - If `(φ = ψ -> ε)`, then `φ`'s value is `True` if either `φ` (in `M`) `False` or if the value of `ε` (in `M`) is `True`.
+    - `Tautology` - A formula that in every model evaluates to `True` (The rightmost column in its truth table is `True`).
+    - `Contradiction` - The negation of a tautology. That is, a formula that evaluates to `False` in every model (The rightmost column in its truth table is `False`).
+    - `Satisfiability` - A formula that evaluates to `True` in some model (The rightmost column in its truth table contains a cell of `True`). That is, a satisfiable formula is not a contradiction.

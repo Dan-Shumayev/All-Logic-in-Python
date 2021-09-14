@@ -127,15 +127,12 @@ def all_models(variables: Sequence[str]) -> Iterable[Model]:
     for v in variables:
         assert is_variable(v)
     # Task 2.2
-    models: List[Model] = []
     permutations = it_product([False, True], repeat=len(variables))
     for permutation in permutations:
         possible_model: Model = {
             var: permutation[index] for index, var in enumerate(variables)
         }
-        models.append(possible_model)
-
-    return models
+        yield possible_model
 
 
 def truth_values(formula: Formula, models: Iterable[Model]) -> Iterable[bool]:
@@ -155,10 +152,8 @@ def truth_values(formula: Formula, models: Iterable[Model]) -> Iterable[bool]:
         [True, True, True, False]
     """
     # Task 2.3
-    truth_table: List[bool] = []
     for model in models:
-        truth_table += [evaluate(formula, model)]
-    return truth_table
+        yield evaluate(formula, model)
 
 
 def print_truth_table(formula: Formula) -> None:
@@ -240,16 +235,15 @@ def print_line_separator(formula_variables, formula_to_string) -> None:
         formula_variables: The formula variables.
         formula_to_string: The string repr. of the formula.
     """
-    NO_PREFIX: str = ""
     LINE_SEP_SYM: str = "-"
 
-    print_table_row(NO_PREFIX, TRUTH_TAB_SEP)
+    print_table_row("", TRUTH_TAB_SEP)
     for variable in formula_variables:
         col_width: int = len(variable) + 2
-        print_table_row(NO_PREFIX, LINE_SEP_SYM * col_width, TRUTH_TAB_SEP)
+        print_table_row("", LINE_SEP_SYM * col_width, TRUTH_TAB_SEP)
     formula_col_width: int = len(formula_to_string) + 2
     print_table_row(
-        NO_PREFIX, LINE_SEP_SYM * formula_col_width, TRUTH_TAB_SEP + NEWLINE
+        "", LINE_SEP_SYM * formula_col_width, TRUTH_TAB_SEP + NEWLINE
     )
 
 
@@ -293,6 +287,36 @@ def is_tautology(formula: Formula) -> bool:
         ``True`` if the given formula is a tautology, ``False`` otherwise.
     """
     # Task 2.5a
+    return contradiction_or_tautology(
+        formula, contradiction=False, tautology=True
+    )
+
+
+def contradiction_or_tautology(
+    formula: Formula, contradiction=True, tautology=False
+) -> bool:
+    """Evaluates if the formula is either a contradiction or a tautology,
+    but not both.
+
+        Parameters:
+            formula: The formula to evaluate.
+            contradiction: ``True``` iff we check the formula for a contradiction.
+            tautology: ``True``` iff we check the formula for a tautology.
+
+        Returns:
+        ``True``` iff the formula evaluates to a contradiction/tautology according
+        to the chosen mode.
+    """
+    assert contradiction != tautology, "You have to choose a single mode."
+    formula_variables: List[str] = list(formula.variables())
+
+    for model in all_models(formula_variables):
+        evaluated = evaluate(formula, model)
+
+        if (contradiction and evaluated) or (tautology and not evaluated):
+            return False
+
+    return True
 
 
 def is_contradiction(formula: Formula) -> bool:
@@ -305,6 +329,7 @@ def is_contradiction(formula: Formula) -> bool:
         ``True`` if the given formula is a contradiction, ``False`` otherwise.
     """
     # Task 2.5b
+    return contradiction_or_tautology(formula, contradiction=True)
 
 
 def is_satisfiable(formula: Formula) -> bool:
@@ -317,6 +342,7 @@ def is_satisfiable(formula: Formula) -> bool:
         ``True`` if the given formula is satisfiable, ``False`` otherwise.
     """
     # Task 2.5c
+    return not is_contradiction(formula)
 
 
 def _synthesize_for_model(model: Model) -> Formula:
