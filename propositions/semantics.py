@@ -360,6 +360,27 @@ def _synthesize_for_model(model: Model) -> Formula:
     assert is_model(model)
     assert len(model.keys()) > 0
     # Task 2.6
+    NEGATE_SYM: str = "~"
+    BINARY_AND: str = "&"
+
+    def trutify_var(var: str) -> Formula:
+        return (
+            Formula(NEGATE_SYM, Formula(var, None, None), None)
+            if not model[var]
+            else Formula(var, None, None)
+        )
+
+    # Convert the model dict into a list of respective tuples:
+    model_as_tuples: List[Tuple] = list(model.items())
+
+    current_formula: Formula = trutify_var(model_as_tuples[0][0])
+
+    for var, _ in model_as_tuples[
+        1:
+    ]:  # Skip over the first variable we've just evaluted
+        current_formula = Formula(BINARY_AND, current_formula, trutify_var(var))
+
+    return current_formula
 
 
 def synthesize(variables: Sequence[str], values: Iterable[bool]) -> Formula:

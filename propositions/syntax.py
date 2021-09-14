@@ -22,6 +22,8 @@ from logic_utils import frozen, memoized_parameterless_method
 OPEN_BINARY_FORM: str = "("
 CLOSE_BINARY_FORM: str = ")"
 
+FormulaPrefix = Tuple[Optional["Formula"], str]  # Forward Reference
+
 
 class Parser:
     """
@@ -578,8 +580,3 @@ class Formula:
             )
             assert substitution_map[operator].variables().issubset({"p", "q"})
         # Task 3.4
-
-
-FormulaPrefix = Tuple[
-    Optional[Formula], str
-]  # TODO - move it to above - forward declare Formula
