@@ -30,6 +30,10 @@
         Constant ::= T | F
         Var ::= [p-z]+[0-9]*   ---   **Highest precedence**
         ```
+        **Note:** In my RD-parser I didn't use a `lexer` (as a separate entity) in order to classify the tokens and iterating over them. There would be at least 2 advantages of doing that:
+
+        - A `lexer` separates the input into tokens which carry additional information: the token type and the exact position of the token in the input string. We can use this position information to generate detailed error messages. This is time saved for the future users of the parser.
+        - We could use Python's own `lexer` and filter the stream of tokens, thus using an extremely robust `lexer` (`tokenizer.tokenize` and `io.BytesIO`).
 #### - `Chapter 2` - **Semantics**
 - `Model` - We define it as a function taking a set of atomic propositions to {True, False} (aka `T` and `F` in our syntax). Put simply, it's a set of propositions.
     - The value of a proposition in a Model is defined recursively:

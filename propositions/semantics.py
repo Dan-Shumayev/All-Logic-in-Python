@@ -16,6 +16,11 @@ from .syntax import *
 #: truth values.
 Model = Mapping[str, bool]
 
+# constants
+NEWLINE: str = "\n"
+TRUTH_TAB_SEP: str = "|"
+WHITESPACE_SEP: str = " "
+
 
 def is_model(model: Model) -> bool:
     """Checks if the given dictionary is a model over some set of variables.
@@ -173,32 +178,109 @@ def print_truth_table(formula: Formula) -> None:
         | T | T   | F        |
     """
     # Task 2.4
-    formula_to_string: str = Formula.formula_obj_to_string(formula)
-    boolean_to_string: Mapping[bool, str] = {True: "T", False: "F"}
-    formula_variables: List[str] = list(formula.variables())
-    formula_variables.sort()
-    for variable in formula_variables:
-        print(f"| {variable} ", end="")
-    print(f"| {formula_to_string} |")
 
-    print("|", end="")
-    for variable in formula_variables:
-        print("-" * (len(variable) + 2), end="")
-        print("|", end="")
-    print("-" * (len(formula_to_string) + 2), end="")
-    print("|")
+    formula_variables: List[str] = list(formula.variables())
+    formula_variables.sort()  # Variables are sorted at the first row
+
+    formula_to_string: str = Formula.formula_obj_to_string(formula)
+
+    # First row:
+    print_variables_row(formula_variables, formula_to_string)
+
+    # Line-separator:
+    print_line_separator(formula_variables, formula_to_string)
+
+    # Table values:
+    print_table_values(
+        formula_variables,
+        formula,
+        formula_to_string,
+    )
+
+
+def print_table_values(
+    formula_variables,
+    formula,
+    formula_to_string,
+) -> None:
+    """Prints the cells of the truth table. These rows contain the evaluation of each
+    variable variable in respect to a possible model. Also, the last column
+    contains the value of the entire formula using the variables' value.
+
+    Parameters:
+        formula_variables: The formula variables.
+        TRUTH_TAB_SEP: The separator symbol of the table.
+        WHITESPACE_SEP: Some amount of whitespaces between each cell.
+        formula: The formula to evaluate.
+        formula_to_string: The string repr. of the formula.
+    """
+    BOOL_TO_STR: Mapping[bool, str] = {True: "T", False: "F"}
 
     for model in all_models(formula_variables):
-        for variable in model.keys():
-            print(
-                f"| {boolean_to_string[model.get(variable)]}"
-                + " " * len(variable),
-                end="",
+        for variable, value in model.items():
+            print_table_row(
+                TRUTH_TAB_SEP + WHITESPACE_SEP,
+                BOOL_TO_STR[value],
+                WHITESPACE_SEP * len(variable),
             )
-        first_part = f"| {boolean_to_string[evaluate(formula, model)]}"
-        second_part = " " * len(formula_to_string) + "|"
-        final_part = first_part + second_part
-        print(final_part)
+        formula_value: bool = evaluate(formula, model)
+        print_table_row(
+            TRUTH_TAB_SEP + WHITESPACE_SEP,
+            BOOL_TO_STR[formula_value],
+            WHITESPACE_SEP * len(formula_to_string) + TRUTH_TAB_SEP + NEWLINE,
+        )
+
+
+def print_line_separator(formula_variables, formula_to_string) -> None:
+    """Prints the second row of the truth table. This rows contains only some delimiter
+    to separate between the variables and their evaluation.
+
+    Parameters:
+        TRUTH_TAB_SEP: The separator symbol of the table.
+        formula_variables: The formula variables.
+        formula_to_string: The string repr. of the formula.
+    """
+    NO_PREFIX: str = ""
+    LINE_SEP_SYM: str = "-"
+
+    print_table_row(NO_PREFIX, TRUTH_TAB_SEP)
+    for variable in formula_variables:
+        col_width: int = len(variable) + 2
+        print_table_row(NO_PREFIX, LINE_SEP_SYM * col_width, TRUTH_TAB_SEP)
+    formula_col_width: int = len(formula_to_string) + 2
+    print_table_row(
+        NO_PREFIX, LINE_SEP_SYM * formula_col_width, TRUTH_TAB_SEP + NEWLINE
+    )
+
+
+def print_variables_row(formula_variables, formula_to_string: str) -> None:
+    """Prints the first row of the truth table. This rows contains the formula
+    variables as well as the formula itself.
+
+    Parameters:
+        formula_variables: The formula variables.
+        formula_to_string: The string repr. of the formula.
+        TRUTH_TAB_SEP: The separator symbol of the table.
+        WHITESPACE_SEP: Some amount of whitespaces between each cell.
+    """
+    for variable in formula_variables:
+        print_table_row(
+            TRUTH_TAB_SEP + WHITESPACE_SEP, variable, WHITESPACE_SEP
+        )
+    print_table_row(
+        TRUTH_TAB_SEP + WHITESPACE_SEP,
+        formula_to_string,
+        WHITESPACE_SEP + TRUTH_TAB_SEP + NEWLINE,
+    )
+
+
+def print_table_row(prefix: str, string: str, suffix: str = "") -> None:
+    """Prints a string without a newline.
+
+    Parameters:
+        string: The string to print.
+    """
+    print(prefix + string, end=suffix)
 
 
 def is_tautology(formula: Formula) -> bool:
