@@ -407,6 +407,59 @@ def synthesize(variables: Sequence[str], values: Iterable[bool]) -> Formula:
     """
     assert len(variables) > 0
     # Task 2.7
+    models_to_dnf: List[Model] = list()
+
+    # In case the formula is always ``False`` => The formula is simply OR over
+    # all the variables
+    there_is_true: bool = False
+    for val in values:
+        there_is_true |= val
+    if not there_is_true:
+        var_formula: Formula = Formula(variables[0], None, None)
+        current_formula: Formula = Formula(
+            "&", var_formula, Formula("~", var_formula, None)
+        )
+        for var in variables[1:]:
+            var_formula_another: Formula = Formula(var, None, None)
+            current_formula = Formula(
+                "|",
+                current_formula,
+                Formula(
+                    "&",
+                    var_formula_another,
+                    Formula("~", var_formula_another, None),
+                ),
+            )
+        return current_formula
+
+    for (model, value) in zip(all_models(variables), values):
+        if value:
+            models_to_dnf.append(model)
+
+    dnf_formulas: List[Formula] = []
+    for model in models_to_dnf:
+        first_var: str = variables[0]
+        intermediate_formula: Formula = (
+            Formula(first_var, None, None)
+            if model[first_var]
+            else Formula("~", Formula(first_var, None, None), None)
+        )
+        for var in variables[1:]:
+            intermediate_formula = (
+                Formula("&", intermediate_formula, Formula(var, None, None))
+                if model[var]
+                else Formula(
+                    "&",
+                    intermediate_formula,
+                    Formula("~", Formula(var, None, None), None),
+                )
+            )
+        dnf_formulas.append(intermediate_formula)
+    current_dnf_formula: Formula = dnf_formulas[0]
+    for dnf_formula in dnf_formulas:
+        current_dnf_formula = Formula("|", current_dnf_formula, dnf_formula)
+
+    return current_dnf_formula
 
 
 def _synthesize_for_all_except_model(model: Model) -> Formula:
