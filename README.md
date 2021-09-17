@@ -50,4 +50,5 @@
     - `Tautology` - A formula that in every model evaluates to `True` (The rightmost column in its truth table is `True`).
     - `Contradiction` - The negation of a tautology. That is, a formula that evaluates to `False` in every model (The rightmost column in its truth table is `False`).
     - `Satisfiability` - A formula that evaluates to `True` in some model (The rightmost column in its truth table contains a cell of `True`). That is, a satisfiable formula is not a contradiction.
-- `DNF`/`CNF` - Ways to express a proposition out of its truth table (Discrete Math). Using a `DNF` we look at the `True` values for the formula, "forcing" its respective model to evaluate to `True` upon `&`'ing its variables, then `|`ing all these models, resulting in a possible proposition representing the formula.</details>
+- `DNF`/`CNF` - Ways to express a proposition out of its truth table (Discrete Math). Using a `DNF` we look at the `True` values for the formula, "forcing" its respective model to evaluate to `True` upon `&`'ing its variables, then `|`ing all these models, resulting in a possible proposition representing the formula.
+- `NP` and `Reduction` - Every `NP` problem is reducible to `SAT` (which is `NP-Complete` as you may recall). In particular, the `3-Coloring` problem is reducible to `SAT` using the vertices as the proposition's literals.</details>

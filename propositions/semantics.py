@@ -73,7 +73,7 @@ def evaluate(formula: Formula, model: Model) -> bool:
     assert formula.variables().issubset(variables(model))
     # Task 2.1
     if is_constant(formula.root):
-        return True if formula.root == "T" else False
+        return formula.root == "T"
     if is_variable(formula.root):
         return model[formula.root]
     if is_unary(formula.root):
