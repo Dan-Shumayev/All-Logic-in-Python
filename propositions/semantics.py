@@ -416,12 +416,12 @@ def synthesize(variables: Sequence[str], values: Iterable[bool]) -> Formula:
         model for (model, value) in zip(all_models(variables), values) if value
     ]
 
-    dnf_clauses: List[Formula] = create_dnf_clauses(models_to_dnf, variables)
+    dnf_clauses: List[Formula] = _create_dnf_clauses(models_to_dnf, variables)
 
-    return clauses_to_dnf_formula(dnf_clauses)
+    return _clauses_to_dnf_formula(dnf_clauses)
 
 
-def clauses_to_dnf_formula(dnf_clauses: List[Formula]) -> Formula:
+def _clauses_to_dnf_formula(dnf_clauses: List[Formula]) -> Formula:
     """Assembles a DNF formula out of disjunctive clauses.
 
     Parameters:
@@ -437,7 +437,7 @@ def clauses_to_dnf_formula(dnf_clauses: List[Formula]) -> Formula:
     return current_dnf_formula
 
 
-def create_dnf_clauses(
+def _create_dnf_clauses(
     models_to_dnf: List[Model], variables: Sequence[str]
 ) -> List[Formula]:
     """Calculates the clauses from which the DNF formula will be consisted of.

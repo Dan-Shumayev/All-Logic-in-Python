@@ -7,8 +7,8 @@
         * A tree-like structure
         * A data structure implemented in Python
 
-
-#### - `Chapter 1` - **Syntax**
+<details>
+#### - <summary><code>Chapter 1</code> - <b>Syntax</b></summary>
 - `Propositional Formula` - defined recursively by the atomic propositions represented by `p` to `z` (possibly followed by any amount of digits), `T`, `F`, such that if `φ` and `ψ` are valid propositional formulas then so are:
 
     - (`φ | ψ`)
@@ -33,8 +33,11 @@
     **Note:** In my RD-parser I didn't use a `lexer` (as a separate entity) in order to classify the tokens and iterating over them. There would be at least 2 advantages of doing that:
 
     - A `lexer` separates the input into tokens which carry additional information: the token type and the exact position of the token in the input string. We can use this position information to generate detailed error messages. This is time saved for the future users of the parser.
-    - We could use Python's own `lexer` and filter the stream of tokens, thus using an extremely robust `lexer` (`tokenizer.tokenize` and `io.BytesIO`).
-#### - `Chapter 2` - **Semantics**
+    - We could use Python's own `lexer` and filter the stream of tokens, thus using an extremely robust `lexer` (`tokenizer.tokenize` and `io.BytesIO`).</details>
+
+<details>
+<summary><code>Chapter 2</code> - <b>Semantics</b></summary>
+
 - `Model` - We define it as a function taking a set of atomic propositions to {True, False} (aka `T` and `F` in our syntax). Put simply, it's a set of propositions.
     - The **value of a proposition** in a Model is defined recursively:
         - **Base case** - `T`, `F` gets the value of `True` and `False` respectively.
@@ -46,4 +49,4 @@
     - `Tautology` - A formula that in every model evaluates to `True` (The rightmost column in its truth table is `True`).
     - `Contradiction` - The negation of a tautology. That is, a formula that evaluates to `False` in every model (The rightmost column in its truth table is `False`).
     - `Satisfiability` - A formula that evaluates to `True` in some model (The rightmost column in its truth table contains a cell of `True`). That is, a satisfiable formula is not a contradiction.
-- `DNF`/`CNF` - Ways to express a proposition out of its truth table (Discrete Math). Using a `DNF` we look at the `True` values for the formula, "forcing" its respective model to evaluate to `True` upon `&`'ing its variables, then `|`ing all these models, resulting in a possible proposition representing the formula.
+- `DNF`/`CNF` - Ways to express a proposition out of its truth table (Discrete Math). Using a `DNF` we look at the `True` values for the formula, "forcing" its respective model to evaluate to `True` upon `&`'ing its variables, then `|`ing all these models, resulting in a possible proposition representing the formula.</details>
