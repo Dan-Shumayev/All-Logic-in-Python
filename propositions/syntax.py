@@ -25,7 +25,7 @@ NEGATE_SYM: str = "~"
 BINARY_AND: str = "&"
 BINARY_OR: str = "|"
 
-FormulaPrefix = Tuple[Optional["Formula"], str]  # Forward Reference
+FormulaPrefix = Tuple[Optional["Formula"], str]  # "" for Forward Reference
 
 
 class Parser:
@@ -41,7 +41,7 @@ class Parser:
     """
 
     ##### Regexes to match the respective tokens #####
-    BINARY_OP_RE = regex_compile(r"&|->|\|")
+    BINARY_OP_RE = regex_compile(r"&|->|\||\+|<->|-&|-\|")
     UNARY_OP_RE = regex_compile(r"~")
     CONSTANT_RE = regex_compile(r"T|F")
     VARIABLE_RE = regex_compile(r"[p-z]+\d*")
@@ -238,9 +238,8 @@ def is_binary(string: str) -> bool:
     Returns:
         ``True`` if the given string is a binary operator, ``False`` otherwise.
     """
-    return string in ("&", "|", "->")
     # For Chapter 3:
-    # return string in {'&', '|',  '->', '+', '<->', '-&', '-|'}
+    return string in {"&", "|", "->", "+", "<->", "-&", "-|"}
 
 
 @frozen
