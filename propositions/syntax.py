@@ -21,6 +21,9 @@ from logic_utils import frozen, memoized_parameterless_method
 # constants:
 OPEN_BINARY_FORM: str = "("
 CLOSE_BINARY_FORM: str = ")"
+NEGATE_SYM: str = "~"
+BINARY_AND: str = "&"
+BINARY_OR: str = "|"
 
 FormulaPrefix = Tuple[Optional["Formula"], str]  # Forward Reference
 
@@ -377,6 +380,16 @@ class Formula:
 
     def __hash__(self) -> int:
         return hash(str(self))
+
+    # Add syntactic sugar:
+    def __invert__(self) -> Formula:
+        return Formula(NEGATE_SYM, self, None)
+
+    def __and__(self, other: Formula) -> Formula:
+        return Formula(BINARY_AND, self, other)
+
+    def __or__(self, other: Formula) -> Formula:
+        return Formula(BINARY_OR, self, other)
 
     @staticmethod
     def extract_variables_from_formula(

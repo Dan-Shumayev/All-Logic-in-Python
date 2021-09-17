@@ -96,9 +96,9 @@ def evaluate_binary_formula(formula: Formula, model: Model) -> bool:
         False or if the value of ε (in M) is True.
     """
     binary_op: str = formula.root  # & | ->
-    if binary_op == "&":
+    if binary_op == BINARY_AND:
         return evaluate(formula.first, model) and evaluate(formula.second, model)  # type: ignore
-    if binary_op == "|":
+    if binary_op == BINARY_OR:
         return evaluate(formula.first, model) or evaluate(formula.second, model)  # type: ignore
     # ->
     return not evaluate(formula.first, model) or evaluate(formula.second, model)  # type: ignore
@@ -360,15 +360,9 @@ def _synthesize_for_model(model: Model) -> Formula:
     assert is_model(model)
     assert len(model.keys()) > 0
     # Task 2.6
-    NEGATE_SYM: str = "~"
-    BINARY_AND: str = "&"
 
     def trutify_var(var: str) -> Formula:
-        return (
-            Formula(NEGATE_SYM, Formula(var, None, None), None)
-            if not model[var]
-            else Formula(var, None, None)
-        )
+        return ~Formula(var) if not model[var] else Formula(var)
 
     # Convert the model dict into a list of respective tuples:
     model_as_tuples: List[Tuple] = list(model.items())
@@ -378,7 +372,7 @@ def _synthesize_for_model(model: Model) -> Formula:
     for var, _ in model_as_tuples[
         1:
     ]:  # Skip over the first variable we've just evaluted
-        current_formula = Formula(BINARY_AND, current_formula, trutify_var(var))
+        current_formula = current_formula & trutify_var(var)
 
     return current_formula
 
@@ -407,59 +401,89 @@ def synthesize(variables: Sequence[str], values: Iterable[bool]) -> Formula:
     """
     assert len(variables) > 0
     # Task 2.7
-    models_to_dnf: List[Model] = list()
 
-    # In case the formula is always ``False`` => The formula is simply OR over
-    # all the variables
-    there_is_true: bool = False
+    # In case the formula is always ``False`` => contradiction proposition
+    is_satisfiable: bool = False
     for val in values:
-        there_is_true |= val
-    if not there_is_true:
-        var_formula: Formula = Formula(variables[0], None, None)
-        current_formula: Formula = Formula(
-            "&", var_formula, Formula("~", var_formula, None)
-        )
-        for var in variables[1:]:
-            var_formula_another: Formula = Formula(var, None, None)
-            current_formula = Formula(
-                "|",
-                current_formula,
-                Formula(
-                    "&",
-                    var_formula_another,
-                    Formula("~", var_formula_another, None),
-                ),
-            )
-        return current_formula
+        is_satisfiable |= val
+    if not is_satisfiable:  # Contradiction
+        # OR the AND of every variable and its negation: (p&~p)|...|(q&~q)
+        return _synthesize_contradiction(variables, values)
 
-    for (model, value) in zip(all_models(variables), values):
-        if value:
-            models_to_dnf.append(model)
+    # At least one model evaluates to `True` - aggregate these models
+    models_to_dnf: List[Model] = []
+    models_to_dnf = [
+        model for (model, value) in zip(all_models(variables), values) if value
+    ]
 
-    dnf_formulas: List[Formula] = []
+    dnf_clauses: List[Formula] = create_dnf_clauses(models_to_dnf, variables)
+
+    return clauses_to_dnf_formula(dnf_clauses)
+
+
+def clauses_to_dnf_formula(dnf_clauses: List[Formula]) -> Formula:
+    """Assembles a DNF formula out of disjunctive clauses.
+
+    Parameters:
+        dnf_clauses: The clauses that assembles the final formula in
+        Disjunctive Normal Form (DNF).
+
+    Returns:
+        The DNF formula out of the received clauses.
+    """
+    current_dnf_formula: Formula = dnf_clauses[0]
+    for dnf_formula in dnf_clauses:
+        current_dnf_formula = current_dnf_formula | dnf_formula
+    return current_dnf_formula
+
+
+def create_dnf_clauses(
+    models_to_dnf: List[Model], variables: Sequence[str]
+) -> List[Formula]:
+    """Calculates the clauses from which the DNF formula will be consisted of.
+
+    Parameters:
+        models_to_dnf: Models that evaluate to `True`.
+        variables: The proposition's literals.
+
+    Returns:
+        The clauses from which the final DNF formula will be assembled.
+    """
+    dnf_clauses: List[Formula] = []
     for model in models_to_dnf:
         first_var: str = variables[0]
         intermediate_formula: Formula = (
-            Formula(first_var, None, None)
-            if model[first_var]
-            else Formula("~", Formula(first_var, None, None), None)
+            Formula(first_var) if model[first_var] else ~Formula(first_var)
         )
         for var in variables[1:]:
             intermediate_formula = (
-                Formula("&", intermediate_formula, Formula(var, None, None))
+                intermediate_formula & Formula(var)
                 if model[var]
-                else Formula(
-                    "&",
-                    intermediate_formula,
-                    Formula("~", Formula(var, None, None), None),
-                )
+                else intermediate_formula & ~Formula(var)
             )
-        dnf_formulas.append(intermediate_formula)
-    current_dnf_formula: Formula = dnf_formulas[0]
-    for dnf_formula in dnf_formulas:
-        current_dnf_formula = Formula("|", current_dnf_formula, dnf_formula)
+        dnf_clauses.append(intermediate_formula)
+    return dnf_clauses
 
-    return current_dnf_formula
+
+def _synthesize_contradiction(variables: Sequence[str], values: Iterable[bool]):
+    def var_to_false_clause(var: str) -> Formula:
+        """Makes a formula that always evaluates to False using a single
+        variable :: (var&~var).
+
+        Parameters:
+            var: The variable that assembles a `False` proposition.
+
+        Returns:
+            The falsified formula object containing the single variable received.
+        """
+        var_to_formula: Formula = Formula(var)
+        return var_to_formula & ~var_to_formula
+
+    current_formula: Formula = var_to_false_clause(variables[0])  # First var
+    for var in variables[1:]:
+        current_formula = current_formula & var_to_false_clause(var)
+
+    return current_formula
 
 
 def _synthesize_for_all_except_model(model: Model) -> Formula:
