@@ -9,6 +9,7 @@
 
 <details>
 <summary><code>Chapter 1</code> - <b>Syntax</b></summary>
+
 - `Propositional Formula` - defined recursively by the atomic propositions represented by `p` to `z` (possibly followed by any amount of digits), `T`, `F`, such that if `φ` and `ψ` are valid propositional formulas then so are:
 
     - (`φ | ψ`)
