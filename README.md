@@ -45,10 +45,15 @@
         - **The recursion step** - inspect the type of the token we're dealing with such that:
             - If `φ` is a variable, we apply the Model function (`M`) on it, resulting in its value.
             - If `φ=~ψ`, then `φ` is `True` iff `M(ψ)` is `False`(which is in its turn determined by the former case).
-            - If `(φ = ε • ψ)`, then `φ`'s value is `True` iff the value of (either - `|`/both - `&`) `ε` and `ψ` is `True` in `M`.
+            - If `(φ = ε • ψ)`, then `φ`'s value is `True` iff the value of (either/both - `|`/`&` respectively) `ε` or/and (respectively) `ψ` is `True` in `M`.
             - If `(φ = ψ -> ε)`, then `φ`'s value is `True` if either `φ` (in `M`) `False` or if the value of `ε` (in `M`) is `True`.
     - `Tautology` - A formula that in every model evaluates to `True` (The rightmost column in its truth table is `True`).
     - `Contradiction` - The negation of a tautology. That is, a formula that evaluates to `False` in every model (The rightmost column in its truth table is `False`).
     - `Satisfiability` - A formula that evaluates to `True` in some model (The rightmost column in its truth table contains a cell of `True`). That is, a satisfiable formula is not a contradiction.
 - `DNF`/`CNF` - Ways to express a proposition out of its truth table (Discrete Math). Using a `DNF` we look at the `True` values for the formula, "forcing" its respective model to evaluate to `True` upon `&`'ing its variables, then `|`ing all these models, resulting in a possible proposition representing the formula.
 - `NP` and `Reduction` - Every `NP` problem is reducible to `SAT` (which is `NP-Complete` as you may recall). In particular, the `3-Coloring` problem is reducible to `SAT` using the vertices as the proposition's literals.</details>
+
+<details>
+<summary><code>Chapter 3</code> - <b>Bla..</b></summary>
+Bla...
+</details>

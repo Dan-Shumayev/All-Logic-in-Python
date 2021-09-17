@@ -21,9 +21,15 @@ from logic_utils import frozen, memoized_parameterless_method
 # constants:
 OPEN_BINARY_FORM: str = "("
 CLOSE_BINARY_FORM: str = ")"
+# operators:
 NEGATE_SYM: str = "~"
 BINARY_AND: str = "&"
 BINARY_OR: str = "|"
+BINARY_IMPLY: str = "->"
+BINARY_IFF: str = "<->"
+BINARY_XOR: str = "+"
+BINARY_NAND: str = "-&"
+BINARY_NOR: str = "-|"
 
 FormulaPrefix = Tuple[Optional["Formula"], str]  # "" for Forward Reference
 

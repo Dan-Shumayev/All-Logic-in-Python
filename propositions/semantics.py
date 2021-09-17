@@ -95,13 +95,27 @@ def evaluate_binary_formula(formula: Formula, model: Model) -> bool:
         If (φ = ψ -> ε), then φ's value is True if either φ (in M)
         False or if the value of ε (in M) is True.
     """
-    binary_op: str = formula.root  # & | ->
+    binary_op: str = formula.root  # & | -> + -& -| <->
     if binary_op == BINARY_AND:
         return evaluate(formula.first, model) and evaluate(formula.second, model)  # type: ignore
     if binary_op == BINARY_OR:
         return evaluate(formula.first, model) or evaluate(formula.second, model)  # type: ignore
-    # ->
-    return not evaluate(formula.first, model) or evaluate(formula.second, model)  # type: ignore
+    if binary_op == BINARY_IMPLY:
+        return not evaluate(formula.first, model) or evaluate(formula.second, model)  # type: ignore
+    if binary_op == BINARY_IFF:
+        return evaluate(formula.first, model) == evaluate(formula.second, model)  # type: ignore
+    if binary_op == BINARY_NOR:
+        return evaluate(~formula.first, model) and evaluate(  # type: ignore
+            ~formula.second, model  # type: ignore
+        )
+    if binary_op == BINARY_XOR:
+        return (
+            evaluate(formula.first, model) and evaluate(~formula.second, model)  # type: ignore
+        ) or (
+            evaluate(~formula.first, model) and evaluate(formula.second, model)  # type: ignore
+        )
+    # What's left => Nand
+    return evaluate(~formula.first, model) or evaluate(~formula.second, model)  # type: ignore
 
 
 def all_models(variables: Sequence[str]) -> Iterable[Model]:
