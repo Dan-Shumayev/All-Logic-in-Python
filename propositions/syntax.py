@@ -139,7 +139,7 @@ class Parser:
 
         operand, remainder = self.parse_formula(op_remainder)
         return (
-            (Formula(op, operand, None), remainder)
+            (Formula(op, operand), remainder)
             if operand
             else (
                 None,
@@ -184,7 +184,7 @@ class Parser:
         """
         root: str = match_token.group(0)
         remainder: str = string_to_parse[match_token.end(0) :]
-        return Formula(root, None, None), remainder
+        return Formula(root), remainder
 
 
 ###### End of RD Parser ######
@@ -388,7 +388,7 @@ class Formula:
 
     # Add syntactic sugar:
     def __invert__(self) -> Formula:
-        return Formula(NEGATE_SYM, self, None)
+        return Formula(NEGATE_SYM, self)
 
     def __and__(self, other: Formula) -> Formula:
         return Formula(BINARY_AND, self, other)
@@ -565,6 +565,35 @@ class Formula:
         for variable in substitution_map:
             assert is_variable(variable)
         # Task 3.3
+
+        if is_variable(self.root) or is_constant(self.root):
+            return (
+                substitution_map[self.root]
+                if substitution_map.get(self.root)
+                else self
+            )
+        if is_unary(self.root) and self.first:
+            return ~(self.first.substitute_variables(substitution_map))
+        # Thus, binary-op & | ->
+        return (
+            (
+                self.first.substitute_variables(substitution_map)
+                & self.second.substitute_variables(substitution_map)
+            )
+            if self.root == BINARY_AND and self.first and self.second
+            else (
+                (
+                    self.first.substitute_variables(substitution_map)
+                    | self.second.substitute_variables(substitution_map)
+                    if self.root == BINARY_OR and self.first and self.second
+                    else Formula(
+                        BINARY_IMPLY,
+                        self.first.substitute_variables(substitution_map),  # type: ignore
+                        self.second.substitute_variables(substitution_map),  # type: ignore
+                    )
+                )
+            )
+        )
 
     def substitute_operators(
         self, substitution_map: Mapping[str, Formula]

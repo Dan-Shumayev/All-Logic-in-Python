@@ -28,7 +28,10 @@ def test_repr(debug=False):
     assert str(Formula("|", Formula("p"), Formula("p"))) == "(p|p)"
     if debug:
         print("Testing representation of formula '~(p&q7)'")
-    assert str(Formula("~", Formula("&", Formula("p"), Formula("q7")))) == "~(p&q7)"
+    assert (
+        str(Formula("~", Formula("&", Formula("p"), Formula("q7"))))
+        == "~(p&q7)"
+    )
     if debug:
         print("Testing representation of formula '((p->q)->(~q->~p))'")
     assert (
@@ -36,7 +39,9 @@ def test_repr(debug=False):
             Formula(
                 "->",
                 Formula("->", Formula("p"), Formula("q")),
-                Formula("->", Formula("~", Formula("q")), Formula("~", Formula("p"))),
+                Formula(
+                    "->", Formula("~", Formula("q")), Formula("~", Formula("p"))
+                ),
             )
         )
         == "((p->q)->(~q->~p))"
@@ -61,7 +66,9 @@ def test_variables(debug=False):
         (
             Formula(
                 "~",
-                Formula("~", Formula("|", Formula("x"), Formula("~", Formula("x")))),
+                Formula(
+                    "~", Formula("|", Formula("x"), Formula("~", Formula("x")))
+                ),
             ),
             {"x"},
         ),
@@ -77,7 +84,10 @@ def test_operators(debug=False):
         (Formula("x1234"), set()),
         (Formula("~", Formula("r")), {"~"}),
         (Formula("->", Formula("x"), Formula("y")), {"->"}),
-        (Formula("&", Formula("F"), Formula("~", Formula("T"))), {"F", "T", "&", "~"}),
+        (
+            Formula("&", Formula("F"), Formula("~", Formula("T"))),
+            {"F", "T", "&", "~"},
+        ),
         (
             Formula(
                 "|",
@@ -89,7 +99,9 @@ def test_operators(debug=False):
         (
             Formula(
                 "~",
-                Formula("~", Formula("|", Formula("x"), Formula("~", Formula("x")))),
+                Formula(
+                    "~", Formula("|", Formula("x"), Formula("~", Formula("x")))
+                ),
             ),
             {"|", "~"},
         ),
@@ -189,7 +201,10 @@ def test_polish(debug=False):
     assert Formula("|", Formula("p"), Formula("p")).polish() == "|pp"
     if debug:
         print("Testing polish of formula '~&pq7' (in infix: '~(p&q7)')")
-    assert Formula("~", Formula("&", Formula("p"), Formula("q7"))).polish() == "~&pq7"
+    assert (
+        Formula("~", Formula("&", Formula("p"), Formula("q7"))).polish()
+        == "~&pq7"
+    )
 
 
 def test_parse_polish(debug=False):
@@ -217,10 +232,16 @@ def test_repr_all_operators(debug=False):
     assert str(Formula("<->", Formula("p"), Formula("p"))) == "(p<->p)"
     if debug:
         print("Testing representation of formula '(p<->~p)'")
-    assert str(Formula("<->", Formula("p"), Formula("~", Formula("p")))) == "(p<->~p)"
+    assert (
+        str(Formula("<->", Formula("p"), Formula("~", Formula("p"))))
+        == "(p<->~p)"
+    )
     if debug:
         print("Testing representation of formula '~(p~&q7)'")
-    assert str(Formula("~", Formula("-&", Formula("p"), Formula("q7")))) == "~(p-&q7)"
+    assert (
+        str(Formula("~", Formula("-&", Formula("p"), Formula("q7"))))
+        == "~(p-&q7)"
+    )
     if debug:
         print("Testing representation of formula '(~(p+q)<->(~q<->~p))'")
     assert (
@@ -228,7 +249,11 @@ def test_repr_all_operators(debug=False):
             Formula(
                 "<->",
                 Formula("~", Formula("+", Formula("p"), Formula("q"))),
-                Formula("<->", Formula("~", Formula("q")), Formula("~", Formula("p"))),
+                Formula(
+                    "<->",
+                    Formula("~", Formula("q")),
+                    Formula("~", Formula("p")),
+                ),
             )
         )
         == "(~(p+q)<->(~q<->~p))"
@@ -240,7 +265,9 @@ def test_repr_all_operators(debug=False):
             Formula(
                 "|",
                 Formula("~", Formula("+", Formula("p1"), Formula("q"))),
-                Formula("-&", Formula("~", Formula("q")), Formula("~", Formula("p"))),
+                Formula(
+                    "-&", Formula("~", Formula("q")), Formula("~", Formula("p"))
+                ),
             )
         )
         == "(~(p1+q)|(~q-&~p))"
@@ -265,7 +292,10 @@ def test_variables_all_operators(debug=False):
         (
             Formula(
                 "~",
-                Formula("~", Formula("<->", Formula("x"), Formula("~", Formula("x")))),
+                Formula(
+                    "~",
+                    Formula("<->", Formula("x"), Formula("~", Formula("x"))),
+                ),
             ),
             {"x"},
         ),
@@ -304,7 +334,9 @@ def test_operators_all_operators(debug=False):
         (
             Formula(
                 "~",
-                Formula("~", Formula("+", Formula("x"), Formula("~", Formula("x")))),
+                Formula(
+                    "~", Formula("+", Formula("x"), Formula("~", Formula("x")))
+                ),
             ),
             {"+", "~"},
         ),
@@ -403,7 +435,12 @@ def test_substitute_variables(debug=False):
     ]
     for f, d, r in tests:
         if debug:
-            print("Testing substituting variables according to", d, "in formula", f)
+            print(
+                "Testing substituting variables according to",
+                d,
+                "in formula",
+                f,
+            )
         f = Formula.parse(f)
         d = {k: Formula.parse(d[k]) for k in d}
         a = str(f.substitute_variables(frozendict(d)))
@@ -419,17 +456,30 @@ def test_substitute_operators(debug=False):
         ("(x|(y|z))", {"|": "(~p->q)"}, "(~x->(~y->z))"),
         ("(x->y)", {"->": "(p&(q|p))"}, "(x&(y|x))"),
         ("(q->r)", {"->": "(p&(q|p))"}, "(q&(r|q))"),
-        ("((p1|~p2)&(p3|T))", {"|": "(q&p)", "&": "~(p->q)"}, "~((~p2&p1)->(T&p3))"),
+        (
+            "((p1|~p2)&(p3|T))",
+            {"|": "(q&p)", "&": "~(p->q)"},
+            "~((~p2&p1)->(T&p3))",
+        ),
         ("(x&(y|z))", {"&": "(q|p)"}, "((y|z)|x)"),
         ("~x", {"~": "(p->F)"}, "(x->F)"),
-        ("~(x->~x)", {"~": "(p-|p)", "->": "(~p|q)"}, "((~x|(x-|x))-|(~x|(x-|x)))"),
+        (
+            "~(x->~x)",
+            {"~": "(p-|p)", "->": "(~p|q)"},
+            "((~x|(x-|x))-|(~x|(x-|x)))",
+        ),
         ("((x&y)&~z)", {"&": "~(~p|~q)"}, "~(~~(~x|~y)|~~z)"),
         ("T", {"T": "(p|~p)"}, "(p|~p)"),
         ("(x-|~F)", {"F": "(p&~p)", "-|": "~(p|q)"}, "~(x|~(p&~p))"),
     ]
     for f, d, r in tests:
         if debug:
-            print("Testing substituting operators according to", d, "in formula", f)
+            print(
+                "Testing substituting operators according to",
+                d,
+                "in formula",
+                f,
+            )
         f = Formula.parse(f)
         d = {k: Formula.parse(d[k]) for k in d}
         a = str(f.substitute_operators(frozendict(d)))

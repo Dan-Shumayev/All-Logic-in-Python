@@ -55,5 +55,8 @@
 
 <details>
 <summary><code>Chapter 3</code> - <b>Bla..</b></summary>
-Bla...
+
+- More operators - `XOR`, `Iff`, `Nand`, `Nor` (have been taught in `Nand2Tetris`).
+    - **Note** - We're able to express any operator using either `Nor` or `Nand` (aka universal functions). Also, note that it's critic for computer architectures' considerations as it may allow them to product minimum amount of chips -> cheaper.
+- `Subtitutions` - Converting formulas that use one set of operators to using another set of operators.
 </details>
