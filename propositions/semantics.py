@@ -103,30 +103,19 @@ def evaluate_binary_formula(formula: Formula, model: Model) -> bool:
         If (φ = ψ -> ε), then φ's value is True if either φ (in M)
         False or if the value of ε (in M) is True.
     """
-    binary_op_to_evaluate: Dict[str, Callable[[Formula, Model], bool]] = {
-        BINARY_AND: lambda formula, model: evaluate(formula.first, model)  # type: ignore
-        & evaluate(formula.second, model),  # type: ignore
-        BINARY_OR: lambda formula, model: evaluate(formula.first, model)  # type: ignore
-        | evaluate(formula.second, model),  # type: ignore
-        BINARY_IMPLY: lambda formula, model: (not evaluate(formula.first, model))  # type: ignore
-        | evaluate(formula.second, model),  # type: ignore
-        BINARY_IFF: lambda formula, model: evaluate(formula.first, model)  # type: ignore
-        == evaluate(formula.second, model),  # type: ignore
-        BINARY_NOR: lambda formula, model: evaluate(~formula.first, model)  # type: ignore
-        & evaluate(~formula.second, model),  # type: ignore
-        BINARY_XOR: lambda formula, model: (
-            evaluate(formula.first, model) & evaluate(~formula.second, model)  # type: ignore
-        )
-        | (
-            evaluate(~formula.first, model) & evaluate(formula.second, model)  # type: ignore
-        ),
-        BINARY_NAND: lambda formula, model: evaluate(~formula.first, model)  # type: ignore
-        | evaluate(~formula.second, model),  # type: ignore
+    binary_op_to_func: Dict[str, Callable[[bool, bool], bool]] = {
+        BINARY_AND: lambda a, b: a & b,
+        BINARY_OR: lambda a, b: a | b,
+        BINARY_IMPLY: lambda a, b: (not a) | b,
+        BINARY_IFF: lambda a, b: a == b,
+        BINARY_NOR: lambda a, b: (not a) & (not b),
+        BINARY_XOR: lambda a, b: (a & (not b)) | ((not a) & b),
+        BINARY_NAND: lambda a, b: (not a) | (not b),
     }
-
     binary_op: str = formula.root  # & | -> + -& -| <->
+    first_formula, second_formula = evaluate(formula.first, model), evaluate(formula.second, model)  # type: ignore
 
-    return binary_op_to_evaluate[binary_op](formula, model)
+    return binary_op_to_func[binary_op](first_formula, second_formula)
 
 
 def all_models(variables: Sequence[str]) -> Iterable[Model]:

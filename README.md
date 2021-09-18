@@ -54,7 +54,7 @@
 - `NP` and `Reduction` - Every `NP` problem is reducible to `SAT` (which is `NP-Complete` as you may recall). In particular, the `3-Coloring` problem is reducible to `SAT` using the vertices as the proposition's literals.</details>
 
 <details>
-<summary><code>Chapter 3</code> - <b>Bla..</b></summary>
+<summary><code>Chapter 3</code> - <b>Formula subtitutions/Sets of operators</b></summary>
 
 - More operators - `XOR`, `Iff`, `Nand`, `Nor` (have been taught in `Nand2Tetris`).
     - **Note** - We're able to express any operator using either `Nor` or `Nand` (aka universal functions). Also, note that it's critic for computer architectures' considerations as it may allow them to product minimum amount of chips -> cheaper.
