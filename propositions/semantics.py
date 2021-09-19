@@ -113,9 +113,13 @@ def evaluate_binary_formula(formula: Formula, model: Model) -> bool:
         BINARY_NAND: lambda a, b: (not a) | (not b),
     }
     binary_op: str = formula.root  # & | -> + -& -| <->
-    first_formula, second_formula = evaluate(formula.first, model), evaluate(formula.second, model)  # type: ignore
+    first_formula_evaluated: bool
+    second_formula_evaluated: bool
+    first_formula_evaluated, second_formula_evaluated = evaluate(formula.first, model), evaluate(formula.second, model)  # type: ignore
 
-    return binary_op_to_func[binary_op](first_formula, second_formula)
+    return binary_op_to_func[binary_op](
+        first_formula_evaluated, second_formula_evaluated
+    )
 
 
 def all_models(variables: Sequence[str]) -> Iterable[Model]:

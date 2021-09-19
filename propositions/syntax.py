@@ -14,7 +14,7 @@ from functools import (
     lru_cache,
 )  # cache last `maxsize` calls to the decorated func
 from re import compile as regex_compile
-from typing import Mapping, Optional, Set, Tuple, Union
+from typing import Callable, Dict, Mapping, Optional, Set, Tuple, Union
 
 from logic_utils import frozen, memoized_parameterless_method
 
@@ -575,24 +575,14 @@ class Formula:
         if is_unary(self.root) and self.first:
             return ~(self.first.substitute_variables(substitution_map))
         # Thus, binary-op & | ->
-        return (
-            (
-                self.first.substitute_variables(substitution_map)
-                & self.second.substitute_variables(substitution_map)
-            )
-            if self.root == BINARY_AND and self.first and self.second
-            else (
-                (
-                    self.first.substitute_variables(substitution_map)
-                    | self.second.substitute_variables(substitution_map)
-                    if self.root == BINARY_OR and self.first and self.second
-                    else Formula(
-                        BINARY_IMPLY,
-                        self.first.substitute_variables(substitution_map),  # type: ignore
-                        self.second.substitute_variables(substitution_map),  # type: ignore
-                    )
-                )
-            )
+        binary_op_to_func: Dict[str, Callable[[Formula, Formula], Formula]] = {
+            BINARY_AND: Formula.__and__,
+            BINARY_OR: Formula.__or__,
+            BINARY_IMPLY: lambda a, b: Formula(BINARY_IMPLY, a, b),
+        }
+        return binary_op_to_func[self.root](
+            self.first.substitute_variables(substitution_map),  # type: ignore
+            self.second.substitute_variables(substitution_map),  # type: ignore
         )
 
     def substitute_operators(
