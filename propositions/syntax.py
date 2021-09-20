@@ -31,6 +31,7 @@ BINARY_XOR: str = "+"
 BINARY_NAND: str = "-&"
 BINARY_NOR: str = "-|"
 
+
 FormulaPrefix = Tuple[Optional["Formula"], str]  # "" for Forward Reference
 
 
@@ -349,6 +350,21 @@ class Formula:
             )
         )
 
+    @classmethod
+    def apply_binary_op(
+        cls, binary_op: str
+    ) -> Callable[[Formula, Formula], Formula]:
+        binary_op_to_func: Dict[str, Callable[[Formula, Formula], Formula]] = {
+            BINARY_AND: Formula.__and__,
+            BINARY_OR: Formula.__or__,
+            BINARY_IMPLY: lambda a, b: cls(BINARY_IMPLY, a, b),
+            BINARY_NOR: lambda a, b: cls(BINARY_NOR, a, b),
+            BINARY_NAND: lambda a, b: cls(BINARY_NAND, a, b),
+            BINARY_IFF: lambda a, b: cls(BINARY_IFF, a, b),
+            BINARY_XOR: lambda a, b: cls(BINARY_XOR, a, b),
+        }
+        return binary_op_to_func[binary_op]
+
     @memoized_parameterless_method
     def __repr__(self) -> str:
         """Computes the string representation of the current formula.
@@ -565,7 +581,6 @@ class Formula:
         for variable in substitution_map:
             assert is_variable(variable)
         # Task 3.3
-
         if is_variable(self.root) or is_constant(self.root):
             return (
                 substitution_map[self.root]
@@ -574,13 +589,8 @@ class Formula:
             )
         if is_unary(self.root) and self.first:
             return ~(self.first.substitute_variables(substitution_map))
-        # Thus, binary-op & | ->
-        binary_op_to_func: Dict[str, Callable[[Formula, Formula], Formula]] = {
-            BINARY_AND: Formula.__and__,
-            BINARY_OR: Formula.__or__,
-            BINARY_IMPLY: lambda a, b: Formula(BINARY_IMPLY, a, b),
-        }
-        return binary_op_to_func[self.root](
+        # Thus, binary-op
+        return Formula.apply_binary_op(self.root)(
             self.first.substitute_variables(substitution_map),  # type: ignore
             self.second.substitute_variables(substitution_map),  # type: ignore
         )
@@ -617,3 +627,33 @@ class Formula:
             )
             assert substitution_map[operator].variables().issubset({"p", "q"})
         # Task 3.4
+
+        # Handle child nodes recursively - subtitute from the bottom up
+        formula_first: Optional[Formula] = None
+        formula_second: Optional[Formula] = None
+
+        if is_variable(self.root) or is_constant(self.root):
+            return (
+                substitution_map[self.root]
+                if substitution_map.get(self.root)
+                else Formula(self.root)
+            )
+        assert self.first, (
+            "Not variable nor constant, hence unary/binary, then at least one"
+            " child"
+        )
+        formula_first = self.first.substitute_operators(substitution_map)
+        if is_binary(self.root) and self.second:
+            formula_second = self.second.substitute_operators(substitution_map)
+
+        # Assmeble the entire formula
+        formula = substitution_map.get(self.root)
+        if formula:
+            sub_vars: Dict[str, Formula] = dict()
+            if formula_first:
+                sub_vars["p"] = formula_first
+            if formula_second:
+                sub_vars["q"] = formula_second
+            return formula.substitute_variables(sub_vars)
+        # No subtitution for root-> Build new node from processed child nodes
+        return Formula(self.root, formula_first, formula_second)
