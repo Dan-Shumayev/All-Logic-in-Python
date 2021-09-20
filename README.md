@@ -59,4 +59,7 @@
 - More operators - `XOR`, `Iff`, `Nand`, `Nor` (have been taught in `Nand2Tetris`).
     - **Note** - We're able to express any operator using either `Nor` or `Nand` (aka universal functions). Also, note that it's critic for computer architectures' considerations as it may allow them to product minimum amount of chips -> cheaper.
 - `Subtitutions` - Converting formulas that use one set of operators to using another set of operators.
+- `Complete set of oprerators` - A set of operators from which any other boolean function can be derived (that is, the same truth table).
+    - For example, the set of operators `{&, |, ~}` is complete as we've proved in (chpater02, task-2.7).
+        - **Conclusion** - Any set of operators that is able to derive these three operators is also complete (`Nand`, `Nor`).
 </details>

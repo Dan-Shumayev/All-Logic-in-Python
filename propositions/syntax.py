@@ -30,6 +30,8 @@ BINARY_IFF: str = "<->"
 BINARY_XOR: str = "+"
 BINARY_NAND: str = "-&"
 BINARY_NOR: str = "-|"
+TRUE_OP: str = "T"
+FALSE_OP: str = "F"
 
 
 FormulaPrefix = Tuple[Optional["Formula"], str]  # "" for Forward Reference
