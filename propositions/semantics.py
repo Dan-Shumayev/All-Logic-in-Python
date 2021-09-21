@@ -29,6 +29,16 @@ NEWLINE: str = "\n"
 TRUTH_TAB_SEP: str = "|"
 WHITESPACE_SEP: str = " "
 
+BINARY_OP_TO_EVAL: Dict[str, Callable[[bool, bool], bool]] = {
+    BINARY_AND: lambda a, b: a & b,
+    BINARY_OR: lambda a, b: a | b,
+    BINARY_IMPLY: lambda a, b: (not a) | b,
+    BINARY_IFF: lambda a, b: a == b,
+    BINARY_NOR: lambda a, b: (not a) & (not b),
+    BINARY_XOR: lambda a, b: (a & (not b)) | ((not a) & b),
+    BINARY_NAND: lambda a, b: (not a) | (not b),
+}
+
 
 def is_model(model: Model) -> bool:
     """Checks if the given dictionary is a model over some set of variables.
@@ -103,21 +113,12 @@ def evaluate_binary_formula(formula: Formula, model: Model) -> bool:
         If (φ = ψ -> ε), then φ's value is True if either φ (in M)
         False or if the value of ε (in M) is True.
     """
-    binary_op_to_func: Dict[str, Callable[[bool, bool], bool]] = {
-        BINARY_AND: lambda a, b: a & b,
-        BINARY_OR: lambda a, b: a | b,
-        BINARY_IMPLY: lambda a, b: (not a) | b,
-        BINARY_IFF: lambda a, b: a == b,
-        BINARY_NOR: lambda a, b: (not a) & (not b),
-        BINARY_XOR: lambda a, b: (a & (not b)) | ((not a) & b),
-        BINARY_NAND: lambda a, b: (not a) | (not b),
-    }
     binary_op: str = formula.root  # & | -> + -& -| <->
     first_formula_evaluated: bool
     second_formula_evaluated: bool
     first_formula_evaluated, second_formula_evaluated = evaluate(formula.first, model), evaluate(formula.second, model)  # type: ignore
 
-    return binary_op_to_func[binary_op](
+    return BINARY_OP_TO_EVAL[binary_op](
         first_formula_evaluated, second_formula_evaluated
     )
 

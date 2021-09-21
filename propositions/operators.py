@@ -19,6 +19,39 @@ class Placeholder:
     second: Formula = Formula("q")
 
 
+operator_via_or_not_and: Dict[str, Formula] = {
+    BINARY_NOR: ~Placeholder.first & ~Placeholder.second,
+    BINARY_NAND: ~Placeholder.first | ~Placeholder.second,
+    BINARY_XOR: (~Placeholder.first & Placeholder.second)
+    | (Placeholder.first & ~Placeholder.second),
+    FALSE_OP: Placeholder.first & ~Placeholder.first,
+    TRUE_OP: Placeholder.first | ~Placeholder.first,
+}
+logically_same_formula: Formula = ~operator_via_or_not_and[
+    BINARY_XOR
+]  # require being the same formula using logics
+operator_via_or_not_and.update(
+    {
+        BINARY_IMPLY: ~Placeholder.first | logically_same_formula,
+        BINARY_IFF: (~Placeholder.first | logically_same_formula)
+        & (~Placeholder.second | logically_same_formula),
+    }
+)
+transform_not_or_and_to_nand: Dict[str, Formula] = {
+    BINARY_OR: Formula(
+        BINARY_NAND,
+        Formula(BINARY_NAND, Placeholder.first, Placeholder.first),
+        Formula(BINARY_NAND, Placeholder.second, Placeholder.second),
+    ),
+    BINARY_AND: Formula(
+        BINARY_NAND,
+        Formula(BINARY_NAND, Placeholder.first, Placeholder.second),
+        Formula(BINARY_NAND, Placeholder.first, Placeholder.second),
+    ),
+    NEGATE_SYM: Formula(BINARY_NAND, Placeholder.first, Placeholder.first),
+}
+
+
 def map_unallowed_to_allowed_ops(
     formula_operators: Set[str], allowed_ops: Set[str]
 ) -> Mapping[str, Formula]:
@@ -36,90 +69,24 @@ def map_unallowed_to_allowed_ops(
 
 def apply_only_allowed_ops(allowed_ops: Set[str]):
     if allowed_ops == {BINARY_OR, BINARY_AND, NEGATE_SYM}:
-        apply_or_not_and: Dict[str, Formula] = {
-            BINARY_NOR: ~Placeholder.first & ~Placeholder.second,
-            BINARY_NAND: ~Placeholder.first | ~Placeholder.second,
-            BINARY_XOR: (~Placeholder.first & Placeholder.second)
-            | (Placeholder.first & ~Placeholder.second),
-            FALSE_OP: Placeholder.first & ~Placeholder.first,
-            TRUE_OP: Placeholder.first | ~Placeholder.first,
-        }
-        logical_same_formula: Formula = ~apply_or_not_and[
-            BINARY_XOR
-        ]  # require being the same formula using logics
-        apply_or_not_and.update(
-            {
-                BINARY_IMPLY: ~Placeholder.first | logical_same_formula,
-                BINARY_IFF: (~Placeholder.first | logical_same_formula)
-                & (~Placeholder.second | logical_same_formula),
-            }
-        )
-        return apply_or_not_and
-
+        return operator_via_or_not_and
     if allowed_ops == {BINARY_NAND}:
-        apply_nand: Dict[str, Formula] = {
-            BINARY_NOR: Formula(
-                BINARY_NAND, Placeholder.first, Placeholder.second
-            ),
+        transform_nand_to_not_or_and: Dict[str, Formula] = {
             BINARY_OR: Formula(
                 BINARY_NAND,
                 Formula(BINARY_NAND, Placeholder.first, Placeholder.first),
                 Formula(BINARY_NAND, Placeholder.second, Placeholder.second),
-            ),
-            BINARY_XOR: Formula(
-                BINARY_NAND,
-                Formula(
-                    BINARY_NAND,
-                    Placeholder.first,
-                    Formula(BINARY_NAND, Placeholder.first, Placeholder.second),
-                ),
-                Formula(
-                    BINARY_NAND,
-                    Placeholder.second,
-                    Formula(BINARY_NAND, Placeholder.first, Placeholder.second),
-                ),
             ),
             BINARY_AND: Formula(
                 BINARY_NAND,
                 Formula(BINARY_NAND, Placeholder.first, Placeholder.second),
                 Formula(BINARY_NAND, Placeholder.first, Placeholder.second),
             ),
-            BINARY_IMPLY: Formula(
-                BINARY_NAND,
-                Placeholder.first,
-                Formula(
-                    BINARY_NAND,
-                    Formula(
-                        BINARY_NAND,
-                        Placeholder.first,
-                        Formula(
-                            BINARY_NAND, Placeholder.first, Placeholder.second
-                        ),
-                    ),
-                    Formula(
-                        BINARY_NAND,
-                        Placeholder.second,
-                        Formula(
-                            BINARY_NAND, Placeholder.first, Placeholder.second
-                        ),
-                    ),
-                ),
-            ),
-            FALSE_OP: Formula(
-                BINARY_NAND,
-                Placeholder.first,
-                Formula(BINARY_NAND, Placeholder.first, Placeholder.first),
-            ),
-            TRUE_OP: Formula(
-                BINARY_NAND,
-                Formula(BINARY_NAND, Placeholder.first, Placeholder.first),
-                Formula(BINARY_NAND, Placeholder.first, Placeholder.first),
-            ),
             NEGATE_SYM: Formula(
                 BINARY_NAND, Placeholder.first, Placeholder.first
             ),
         }
-        return apply_nand
+        return transform_nand_to_not_or_and
 
 
 def to_not_and_or(formula: Formula) -> Formula:
@@ -169,12 +136,15 @@ def to_nand(formula: Formula) -> Formula:
         contains no constants or operators beyond ``'-&'``.
     """
     # Task 3.6b
-    allowed_ops: Set[str] = {BINARY_NAND}
-    subtitution_map: Mapping[str, Formula] = map_unallowed_to_allowed_ops(
-        formula.operators(), allowed_ops
-    )
+    # allowed_ops: Set[str] = {BINARY_NAND}
+    # subtitution_map: Mapping[str, Formula] = map_unallowed_to_allowed_ops(
+    #     formula.operators(), allowed_ops
+    # )
 
-    return formula.substitute_operators(subtitution_map)
+    # return formula.substitute_operators(subtitution_map)
+    return formula.substitute_operators(
+        operator_via_or_not_and
+    ).substitute_operators(transform_not_or_and_to_nand)
 
 
 def to_implies_not(formula: Formula) -> Formula:

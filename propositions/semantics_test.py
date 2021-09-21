@@ -13,7 +13,7 @@ from .semantics import *
 from .syntax import *
 
 
-def test_evaluate(debug=True):
+def test_evaluate(debug=False):
     infix1 = "~(p&q7)"
     models_values1 = [
         ({"p": True, "q7": False}, True),
