@@ -80,3 +80,83 @@ Tue Sep 21 17:37:51 2021    C:\Users\fserv\Downloads\Year 4\Semester A\Intro to 
 
 
 ====================== 1 passed, 62 deselected in 0.16s =======================
+============================= test session starts =============================
+platform win32 -- Python 3.9.6, pytest-6.2.5, py-1.10.0, pluggy-1.0.0
+rootdir: C:\Users\fserv\Downloads\Year 4\Semester A\Intro to Logic\Projects
+plugins: cov-2.12.1, profiling-1.7.0
+collected 1 item
+
+propositions\operators_test.py .                                         [100%]
+Profiling (from C:\Users\fserv\Downloads\Year 4\Semester A\Intro to Logic\Projects\prof\combined.prof):
+Tue Sep 21 17:50:52 2021    C:\Users\fserv\Downloads\Year 4\Semester A\Intro to Logic\Projects\prof\combined.prof
+
+         44244 function calls (36530 primitive calls) in 0.024 seconds
+
+   Ordered by: cumulative time
+   List reduced from 423 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    0.024    0.024 runner.py:106(pytest_runtest_protocol)
+    15/11    0.000    0.000    0.023    0.002 _hooks.py:244(__call__)
+    15/11    0.000    0.000    0.023    0.002 _manager.py:77(_hookexec)
+    15/11    0.000    0.000    0.023    0.002 _callers.py:9(_multicall)
+        1    0.000    0.000    0.023    0.023 runner.py:114(runtestprotocol)
+        3    0.000    0.000    0.023    0.008 runner.py:212(call_and_report)
+        3    0.000    0.000    0.022    0.007 runner.py:240(call_runtest_hook)
+        3    0.000    0.000    0.022    0.007 runner.py:298(from_call)
+        3    0.000    0.000    0.022    0.007 runner.py:255(<lambda>)
+        1    0.000    0.000    0.020    0.020 runner.py:153(pytest_runtest_call)
+        1    0.000    0.000    0.020    0.020 python.py:1639(runtest)
+        1    0.000    0.000    0.020    0.020 python.py:176(pytest_pyfunc_call)
+        1    0.000    0.000    0.020    0.020 operators_test.py:43(test_to_not_and_or)
+       19    0.000    0.000    0.016    0.001 semantics.py:299(is_tautology)
+       19    0.000    0.000    0.016    0.001 semantics.py:314(contradiction_or_tautology)
+  3638/96    0.005    0.000    0.016    0.000 semantics.py:72(evaluate)
+  1206/96    0.001    0.000    0.015    0.000 semantics.py:103(evaluate_binary_formula)
+      304    0.000    0.000    0.004    0.000 logic_utils.py:104(wrapper)
+     3638    0.002    0.000    0.004    0.000 semantics.py:59(variables)
+     7276    0.003    0.000    0.003    0.000 semantics.py:43(is_model)
+
+
+
+============================== 1 passed in 0.09s ==============================
+============================= test session starts =============================
+platform win32 -- Python 3.9.6, pytest-6.2.5, py-1.10.0, pluggy-1.0.0
+rootdir: C:\Users\fserv\Downloads\Year 4\Semester A\Intro to Logic\Projects
+plugins: cov-2.12.1, profiling-1.7.0
+collected 1 item
+
+propositions\operators_test.py .                                         [100%]
+Profiling (from C:\Users\fserv\Downloads\Year 4\Semester A\Intro to Logic\Projects\prof\combined.prof):
+Tue Sep 21 17:51:19 2021    C:\Users\fserv\Downloads\Year 4\Semester A\Intro to Logic\Projects\prof\combined.prof
+
+         37474616 function calls (29051892 primitive calls) in 17.270 seconds
+
+   Ordered by: cumulative time
+   List reduced from 421 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000   17.270   17.270 runner.py:106(pytest_runtest_protocol)
+    15/11    0.000    0.000   17.270    1.570 _hooks.py:244(__call__)
+    15/11    0.000    0.000   17.269    1.570 _manager.py:77(_hookexec)
+    15/11    0.000    0.000   17.269    1.570 _callers.py:9(_multicall)
+        1    0.000    0.000   17.269   17.269 runner.py:114(runtestprotocol)
+        3    0.000    0.000   17.269    5.756 runner.py:212(call_and_report)
+        3    0.000    0.000   17.269    5.756 runner.py:240(call_runtest_hook)
+        3    0.000    0.000   17.269    5.756 runner.py:298(from_call)
+        3    0.000    0.000   17.269    5.756 runner.py:255(<lambda>)
+        1    0.000    0.000   17.267   17.267 runner.py:153(pytest_runtest_call)
+        1    0.000    0.000   17.267   17.267 python.py:1639(runtest)
+        1    0.000    0.000   17.267   17.267 python.py:176(pytest_pyfunc_call)
+        1    0.000    0.000   17.267   17.267 operators_test.py:79(test_to_nand)
+       19    0.000    0.000   17.070    0.898 semantics.py:299(is_tautology)
+       19    0.000    0.000   17.070    0.898 semantics.py:314(contradiction_or_tautology)
+4464658/96    6.038    0.000   16.896    0.176 semantics.py:72(evaluate)
+2232212/96    1.818    0.000   16.896    0.176 semantics.py:103(evaluate_binary_formula)
+  4464658    2.002    0.000    4.502    0.000 semantics.py:59(variables)
+  8929316    4.075    0.000    4.075    0.000 semantics.py:43(is_model)
+  4466309    1.099    0.000    1.099    0.000 {method 'issubset' of 'set' objects}
+
+
+
+============================= 1 passed in 17.33s ==============================
