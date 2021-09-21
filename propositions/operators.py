@@ -13,6 +13,7 @@ from propositions.semantics import *
 from propositions.syntax import *
 
 
+# TODO - Consider the way of declaration of the dictionaries below.
 @dataclass
 class Placeholder:
     first: Formula = Formula("p")
@@ -20,23 +21,15 @@ class Placeholder:
 
 
 operators_via_or_not_and: Dict[str, Formula] = {
-    BINARY_NOR: ~Placeholder.first & ~Placeholder.second,
-    BINARY_NAND: ~Placeholder.first | ~Placeholder.second,
-    BINARY_XOR: (~Placeholder.first & Placeholder.second)
-    | (Placeholder.first & ~Placeholder.second),
-    FALSE_OP: Placeholder.first & ~Placeholder.first,
-    TRUE_OP: Placeholder.first | ~Placeholder.first,
+    "->": Formula.parse("(~p|q)"),
+    "+": Formula.parse("((p&~q)|(~p&q))"),
+    "<->": Formula.parse("((p&q)|(~p&~q))"),
+    "-&": Formula.parse("~(p&q)"),
+    "-|": Formula.parse("~(p|q)"),
+    "T": Formula.parse("(p|~p)"),
+    "F": Formula.parse("(p&~p)"),
 }
-logically_same_formula: Formula = ~operators_via_or_not_and[
-    BINARY_XOR
-]  # require being the same formula using logics
-operators_via_or_not_and.update(
-    {
-        BINARY_IMPLY: ~Placeholder.first | logically_same_formula,
-        BINARY_IFF: (~Placeholder.first | logically_same_formula)
-        & (~Placeholder.second | logically_same_formula),
-    }
-)
+
 
 transform_not_or_and_to_nand: Dict[str, Formula] = {
     BINARY_OR: Formula(

@@ -63,3 +63,9 @@
     - For example, the set of operators `{&, |, ~}` is complete as we've proved in (chpater02, task-2.7).
         - **Conclusion** - Any set of operators that is able to derive these three operators is also complete (`Nand`, `Nor`).
 </details>
+
+<details>
+<summary><code>Chapter 4</code> - <b>Proof by deduction</b></summary>
+
+-
+</details>

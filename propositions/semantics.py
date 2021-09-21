@@ -7,17 +7,11 @@
 """Semantic analysis of propositional-logic constructs."""
 
 from itertools import product as it_product
-from typing import (
-    AbstractSet,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Sequence,
-)
+from typing import (AbstractSet, Callable, Dict, Iterable, List, Mapping,
+                    Sequence)
 
-from .proofs import *
+from propositions.proofs import *
+
 from .syntax import *
 
 #: A model for propositional-logic formulas, a mapping from variable names to
@@ -156,7 +150,7 @@ def all_models(variables: Sequence[str]) -> Iterable[Model]:
 
 def truth_values(formula: Formula, models: Iterable[Model]) -> Iterable[bool]:
     """Calculates the truth value of the given formula in each of the given
-    model.
+    models.
 
     Parameters:
         formula: formula to calculate the truth value of.
@@ -306,9 +300,10 @@ def is_tautology(formula: Formula) -> bool:
         ``True`` if the given formula is a tautology, ``False`` otherwise.
     """
     # Task 2.5a
-    return contradiction_or_tautology(
-        formula, contradiction=False, tautology=True
-    )
+    # return contradiction_or_tautology(
+    #     formula, contradiction=False, tautology=True
+    # )
+    return all(truth_values(formula, all_models(list(formula.variables()))))
 
 
 def contradiction_or_tautology(
@@ -505,47 +500,47 @@ def _synthesize_contradiction(variables: Sequence[str], values: Iterable[bool]):
     return current_formula
 
 
-def _synthesize_for_all_except_model(model: Model) -> Formula:
-    """Synthesizes a propositional formula in the form of a single disjunctive
-    clause that evaluates to ``False`` in the given model, and to ``True`` in
-    any other model over the same variables.
+# def _synthesize_for_all_except_model(model: Model) -> Formula:
+#     """Synthesizes a propositional formula in the form of a single disjunctive
+#     clause that evaluates to ``False`` in the given model, and to ``True`` in
+#     any other model over the same variables.
 
-    Parameters:
-        model: model over a nonempty set of variables, in which the synthesized
-            formula is to hold.
+#     Parameters:
+#         model: model over a nonempty set of variables, in which the synthesized
+#             formula is to hold.
 
-    Returns:
-        The synthesized formula.
-    """
-    assert is_model(model)
-    assert len(model.keys()) > 0
-    # Optional Task 2.8
+#     Returns:
+#         The synthesized formula.
+#     """
+#     assert is_model(model)
+#     assert len(model.keys()) > 0
+#     # Optional Task 2.8
 
 
-def synthesize_cnf(variables: Sequence[str], values: Iterable[bool]) -> Formula:
-    """Synthesizes a propositional formula in CNF over the given variables,
-    that has the specified truth table.
+# def synthesize_cnf(variables: Sequence[str], values: Iterable[bool]) -> Formula:
+#     """Synthesizes a propositional formula in CNF over the given variables,
+#     that has the specified truth table.
 
-    Parameters:
-        variables: nonempty set of variables for the synthesized formula.
-        values: iterable over truth values for the synthesized formula in every
-            possible model over the given variables, in the order returned by
-            `all_models`\ ``(``\ `~synthesize.variables`\ ``)``.
+#     Parameters:
+#         variables: nonempty set of variables for the synthesized formula.
+#         values: iterable over truth values for the synthesized formula in every
+#             possible model over the given variables, in the order returned by
+#             `all_models`\ ``(``\ `~synthesize.variables`\ ``)``.
 
-    Returns:
-        The synthesized formula.
+#     Returns:
+#         The synthesized formula.
 
-    Examples:
-        >>> formula = synthesize_cnf(['p', 'q'], [True, True, True, False])
-        >>> for model in all_models(['p', 'q']):
-        ...     evaluate(formula, model)
-        True
-        True
-        True
-        False
-    """
-    assert len(variables) > 0
-    # Optional Task 2.9
+#     Examples:
+#         >>> formula = synthesize_cnf(['p', 'q'], [True, True, True, False])
+#         >>> for model in all_models(['p', 'q']):
+#         ...     evaluate(formula, model)
+#         True
+#         True
+#         True
+#         False
+#     """
+#     assert len(variables) > 0
+#     # Optional Task 2.9
 
 
 # Tasks for Chapter 4
