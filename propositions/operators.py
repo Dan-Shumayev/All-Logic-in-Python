@@ -19,7 +19,7 @@ class Placeholder:
     second: Formula = Formula("q")
 
 
-operator_via_or_not_and: Dict[str, Formula] = {
+operators_via_or_not_and: Dict[str, Formula] = {
     BINARY_NOR: ~Placeholder.first & ~Placeholder.second,
     BINARY_NAND: ~Placeholder.first | ~Placeholder.second,
     BINARY_XOR: (~Placeholder.first & Placeholder.second)
@@ -27,16 +27,17 @@ operator_via_or_not_and: Dict[str, Formula] = {
     FALSE_OP: Placeholder.first & ~Placeholder.first,
     TRUE_OP: Placeholder.first | ~Placeholder.first,
 }
-logically_same_formula: Formula = ~operator_via_or_not_and[
+logically_same_formula: Formula = ~operators_via_or_not_and[
     BINARY_XOR
 ]  # require being the same formula using logics
-operator_via_or_not_and.update(
+operators_via_or_not_and.update(
     {
         BINARY_IMPLY: ~Placeholder.first | logically_same_formula,
         BINARY_IFF: (~Placeholder.first | logically_same_formula)
         & (~Placeholder.second | logically_same_formula),
     }
 )
+
 transform_not_or_and_to_nand: Dict[str, Formula] = {
     BINARY_OR: Formula(
         BINARY_NAND,
@@ -49,6 +50,33 @@ transform_not_or_and_to_nand: Dict[str, Formula] = {
         Formula(BINARY_NAND, Placeholder.first, Placeholder.second),
     ),
     NEGATE_SYM: Formula(BINARY_NAND, Placeholder.first, Placeholder.first),
+}
+
+transform_not_or_and_to_not_and: Dict[str, Formula] = {
+    BINARY_OR: ~(~Placeholder.first & ~Placeholder.second)
+}
+
+transform_not_or_and_to_implies_not: Dict[str, Formula] = {
+    BINARY_AND: ~Formula(BINARY_IMPLY, Placeholder.first, ~Placeholder.second),
+    BINARY_OR: Formula(BINARY_IMPLY, ~Placeholder.first, Placeholder.second),
+}
+
+transform_not_or_and_to_implies_false: Dict[str, Formula] = {
+    NEGATE_SYM: Formula(BINARY_IMPLY, Placeholder.first, Formula(FALSE_OP)),
+    BINARY_OR: Formula(
+        BINARY_IMPLY,
+        Formula(BINARY_IMPLY, Placeholder.first, Formula(FALSE_OP)),
+        Placeholder.second,
+    ),
+    BINARY_AND: Formula(
+        BINARY_IMPLY,
+        Formula(
+            BINARY_IMPLY,
+            Placeholder.first,
+            Formula(BINARY_IMPLY, Placeholder.second, Formula(FALSE_OP)),
+        ),
+        Formula(FALSE_OP),
+    ),
 }
 
 
@@ -69,7 +97,7 @@ def map_unallowed_to_allowed_ops(
 
 def apply_only_allowed_ops(allowed_ops: Set[str]):
     if allowed_ops == {BINARY_OR, BINARY_AND, NEGATE_SYM}:
-        return operator_via_or_not_and
+        return operators_via_or_not_and
     if allowed_ops == {BINARY_NAND}:
         transform_nand_to_not_or_and: Dict[str, Formula] = {
             BINARY_OR: Formula(
@@ -122,6 +150,9 @@ def to_not_and(formula: Formula) -> Formula:
         contains no constants or operators beyond ``'~'`` and ``'&'``.
     """
     # Task 3.6a
+    return formula.substitute_operators(
+        operators_via_or_not_and
+    ).substitute_operators(transform_not_or_and_to_not_and)
 
 
 def to_nand(formula: Formula) -> Formula:
@@ -136,14 +167,8 @@ def to_nand(formula: Formula) -> Formula:
         contains no constants or operators beyond ``'-&'``.
     """
     # Task 3.6b
-    # allowed_ops: Set[str] = {BINARY_NAND}
-    # subtitution_map: Mapping[str, Formula] = map_unallowed_to_allowed_ops(
-    #     formula.operators(), allowed_ops
-    # )
-
-    # return formula.substitute_operators(subtitution_map)
     return formula.substitute_operators(
-        operator_via_or_not_and
+        operators_via_or_not_and
     ).substitute_operators(transform_not_or_and_to_nand)
 
 
@@ -159,6 +184,9 @@ def to_implies_not(formula: Formula) -> Formula:
         contains no constants or operators beyond ``'->'`` and ``'~'``.
     """
     # Task 3.6c
+    return formula.substitute_operators(
+        operators_via_or_not_and
+    ).substitute_operators(transform_not_or_and_to_implies_not)
 
 
 def to_implies_false(formula: Formula) -> Formula:
@@ -173,3 +201,6 @@ def to_implies_false(formula: Formula) -> Formula:
         contains no constants or operators beyond ``'->'`` and ``'F'``.
     """
     # Task 3.6d
+    return formula.substitute_operators(
+        operators_via_or_not_and
+    ).substitute_operators(transform_not_or_and_to_implies_false)
