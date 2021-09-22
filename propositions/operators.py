@@ -7,92 +7,44 @@
 """Syntactic conversion of propositional formulas to use only specific sets of
 operators."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
+from functools import wraps  # lazy getter decorator
 
 from propositions.semantics import *
 from propositions.syntax import *
 
 
-# TODO - Consider the way of declaration of the dictionaries below.
-@dataclass
-class Placeholder:
-    first: Formula = Formula("p")
-    second: Formula = Formula("q")
+def lazyprop(op):
+    transform_to: str = "to_" + op.__name__
+
+    @property
+    @wraps(op)
+    def _memoize_op(self):
+        if not hasattr(self, transform_to):
+            setattr(self, transform_to, op(self))
+        return getattr(self, transform_to)
+
+    return _memoize_op
 
 
-operators_via_or_not_and: Dict[str, Formula] = {
-    "->": Formula.parse("(~p|q)"),
-    "+": Formula.parse("((p&~q)|(~p&q))"),
-    "<->": Formula.parse("((p&q)|(~p&~q))"),
-    "-&": Formula.parse("~(p&q)"),
-    "-|": Formula.parse("~(p|q)"),
-    "T": Formula.parse("(p|~p)"),
-    "F": Formula.parse("(p&~p)"),
-}
+class TransformOperators:
+    @lazyprop
+    def not_or_and(self) -> Dict[str, Formula]:
+        return {
+            BINARY_IMPLY: Formula.parse("(~p|q)"),
+            BINARY_XOR: Formula.parse("((p&~q)|(~p&q))"),
+            BINARY_IFF: Formula.parse("((p&q)|(~p&~q))"),
+            BINARY_NAND: Formula.parse("~(p&q)"),
+            BINARY_NOR: Formula.parse("~(p|q)"),
+            TRUE_OP: Formula.parse("(p|~p)"),
+            FALSE_OP: Formula.parse("(p&~p)"),
+        }
 
-
-transform_not_or_and_to_nand: Dict[str, Formula] = {
-    BINARY_OR: Formula(
-        BINARY_NAND,
-        Formula(BINARY_NAND, Placeholder.first, Placeholder.first),
-        Formula(BINARY_NAND, Placeholder.second, Placeholder.second),
-    ),
-    BINARY_AND: Formula(
-        BINARY_NAND,
-        Formula(BINARY_NAND, Placeholder.first, Placeholder.second),
-        Formula(BINARY_NAND, Placeholder.first, Placeholder.second),
-    ),
-    NEGATE_SYM: Formula(BINARY_NAND, Placeholder.first, Placeholder.first),
-}
-
-transform_not_or_and_to_not_and: Dict[str, Formula] = {
-    BINARY_OR: ~(~Placeholder.first & ~Placeholder.second)
-}
-
-transform_not_or_and_to_implies_not: Dict[str, Formula] = {
-    BINARY_AND: ~Formula(BINARY_IMPLY, Placeholder.first, ~Placeholder.second),
-    BINARY_OR: Formula(BINARY_IMPLY, ~Placeholder.first, Placeholder.second),
-}
-
-transform_not_or_and_to_implies_false: Dict[str, Formula] = {
-    NEGATE_SYM: Formula(BINARY_IMPLY, Placeholder.first, Formula(FALSE_OP)),
-    BINARY_OR: Formula(
-        BINARY_IMPLY,
-        Formula(BINARY_IMPLY, Placeholder.first, Formula(FALSE_OP)),
-        Placeholder.second,
-    ),
-    BINARY_AND: Formula(
-        BINARY_IMPLY,
-        Formula(
-            BINARY_IMPLY,
-            Placeholder.first,
-            Formula(BINARY_IMPLY, Placeholder.second, Formula(FALSE_OP)),
-        ),
-        Formula(FALSE_OP),
-    ),
-}
-
-
-def map_unallowed_to_allowed_ops(
-    formula_operators: Set[str], allowed_ops: Set[str]
-) -> Mapping[str, Formula]:
-    """ """
-    apply_or_not_and = apply_only_allowed_ops(allowed_ops)
-
-    subtitution_map: Dict[str, Formula] = {
-        op: apply_or_not_and[op]
-        for op in formula_operators
-        if op not in allowed_ops
-    }
-
-    return subtitution_map
-
-
-def apply_only_allowed_ops(allowed_ops: Set[str]):
-    if allowed_ops == {BINARY_OR, BINARY_AND, NEGATE_SYM}:
-        return operators_via_or_not_and
-    if allowed_ops == {BINARY_NAND}:
-        transform_nand_to_not_or_and: Dict[str, Formula] = {
+    @lazyprop
+    def nand(self) -> Dict[str, Formula]:
+        return {
             BINARY_OR: Formula(
                 BINARY_NAND,
                 Formula(BINARY_NAND, Placeholder.first, Placeholder.first),
@@ -107,7 +59,54 @@ def apply_only_allowed_ops(allowed_ops: Set[str]):
                 BINARY_NAND, Placeholder.first, Placeholder.first
             ),
         }
-        return transform_nand_to_not_or_and
+
+    @lazyprop
+    def not_and(self) -> Dict[str, Formula]:
+        return {BINARY_OR: ~(~Placeholder.first & ~Placeholder.second)}
+
+    @lazyprop
+    def implies_not(self) -> Dict[str, Formula]:
+        return {
+            BINARY_AND: ~Formula(
+                BINARY_IMPLY, Placeholder.first, ~Placeholder.second
+            ),
+            BINARY_OR: Formula(
+                BINARY_IMPLY, ~Placeholder.first, Placeholder.second
+            ),
+        }
+
+    @lazyprop
+    def implies_false(self) -> Dict[str, Formula]:
+        return {
+            NEGATE_SYM: Formula(
+                BINARY_IMPLY, Placeholder.first, Formula(FALSE_OP)
+            ),
+            BINARY_OR: Formula(
+                BINARY_IMPLY,
+                Formula(BINARY_IMPLY, Placeholder.first, Formula(FALSE_OP)),
+                Placeholder.second,
+            ),
+            BINARY_AND: Formula(
+                BINARY_IMPLY,
+                Formula(
+                    BINARY_IMPLY,
+                    Placeholder.first,
+                    Formula(
+                        BINARY_IMPLY, Placeholder.second, Formula(FALSE_OP)
+                    ),
+                ),
+                Formula(FALSE_OP),
+            ),
+        }
+
+
+@dataclass
+class Placeholder:
+    first: Formula = Formula("p")
+    second: Formula = Formula("q")
+
+
+transform_operators_to: TransformOperators = TransformOperators()
 
 
 def to_not_and_or(formula: Formula) -> Formula:
@@ -123,12 +122,7 @@ def to_not_and_or(formula: Formula) -> Formula:
         ``'|'``.
     """
     # Task 3.5
-    allowed_ops: Set[str] = {BINARY_AND, BINARY_OR, NEGATE_SYM}
-    subtitution_map: Mapping[str, Formula] = map_unallowed_to_allowed_ops(
-        formula.operators(), allowed_ops
-    )
-
-    return formula.substitute_operators(subtitution_map)
+    return formula.substitute_operators(transform_operators_to.not_or_and)
 
 
 def to_not_and(formula: Formula) -> Formula:
@@ -144,8 +138,8 @@ def to_not_and(formula: Formula) -> Formula:
     """
     # Task 3.6a
     return formula.substitute_operators(
-        operators_via_or_not_and
-    ).substitute_operators(transform_not_or_and_to_not_and)
+        transform_operators_to.not_or_and
+    ).substitute_operators(transform_operators_to.not_and)
 
 
 def to_nand(formula: Formula) -> Formula:
@@ -161,8 +155,8 @@ def to_nand(formula: Formula) -> Formula:
     """
     # Task 3.6b
     return formula.substitute_operators(
-        operators_via_or_not_and
-    ).substitute_operators(transform_not_or_and_to_nand)
+        transform_operators_to.not_or_and
+    ).substitute_operators(transform_operators_to.nand)
 
 
 def to_implies_not(formula: Formula) -> Formula:
@@ -178,8 +172,8 @@ def to_implies_not(formula: Formula) -> Formula:
     """
     # Task 3.6c
     return formula.substitute_operators(
-        operators_via_or_not_and
-    ).substitute_operators(transform_not_or_and_to_implies_not)
+        transform_operators_to.not_or_and
+    ).substitute_operators(transform_operators_to.implies_not)
 
 
 def to_implies_false(formula: Formula) -> Formula:
@@ -195,5 +189,5 @@ def to_implies_false(formula: Formula) -> Formula:
     """
     # Task 3.6d
     return formula.substitute_operators(
-        operators_via_or_not_and
-    ).substitute_operators(transform_not_or_and_to_implies_false)
+        transform_operators_to.not_or_and
+    ).substitute_operators(transform_operators_to.implies_false)

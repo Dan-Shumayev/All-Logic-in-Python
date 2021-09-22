@@ -62,6 +62,10 @@
 - `Complete set of oprerators` - A set of operators from which any other boolean function can be derived (that is, the same truth table).
     - For example, the set of operators `{&, |, ~}` is complete as we've proved in (chpater02, task-2.7).
         - **Conclusion** - Any set of operators that is able to derive these three operators is also complete (`Nand`, `Nor`).
+    - **Ways of proving incompleteness of operator sets**:
+        - **Incompleteness proof** - Showing that every boolean function over the said set of operators is preserving some property denoted by `P` (usually done by induction). Hence, we show that there is an operator that does not hold the `P`-preserveness (so the first set lacks at least one operator `->` isn't complete).
+        - **Another way to refute set-completeness** - Showing that every boolean function using only the said set of operators is affine by showing that every subset of the operators is equivalent to `XOR` and `~`. Now, we know that the operator `&` is not affine, thus the affine set is not complete.
+        - **Another way to refute set-completeness** - Showing that every boolean function using the said set of operators is *monotone* (Changing an input from `F` to `T` never changes the output from `T` to `F`). `~` is not monotone. hence is not in the set, and the set is incomplete.
 </details>
 
 <details>

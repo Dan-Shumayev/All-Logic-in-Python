@@ -7,8 +7,15 @@
 """Semantic analysis of propositional-logic constructs."""
 
 from itertools import product as it_product
-from typing import (AbstractSet, Callable, Dict, Iterable, List, Mapping,
-                    Sequence)
+from typing import (
+    AbstractSet,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Sequence,
+)
 
 from propositions.proofs import *
 
@@ -299,10 +306,6 @@ def is_tautology(formula: Formula) -> bool:
     Returns:
         ``True`` if the given formula is a tautology, ``False`` otherwise.
     """
-    # Task 2.5a
-    # return contradiction_or_tautology(
-    #     formula, contradiction=False, tautology=True
-    # )
     return all(truth_values(formula, all_models(list(formula.variables()))))
 
 
@@ -321,16 +324,7 @@ def contradiction_or_tautology(
         ``True``` iff the formula evaluates to a contradiction/tautology according
         to the chosen mode.
     """
-    assert contradiction != tautology, "You have to choose a single mode."
-    formula_variables: List[str] = list(formula.variables())
-
-    for model in all_models(formula_variables):
-        evaluated = evaluate(formula, model)
-
-        if (contradiction and evaluated) or (tautology and not evaluated):
-            return False
-
-    return True
+    return all(truth_values(formula, all_models(list(formula.variables()))))
 
 
 def is_contradiction(formula: Formula) -> bool:
@@ -343,7 +337,7 @@ def is_contradiction(formula: Formula) -> bool:
         ``True`` if the given formula is a contradiction, ``False`` otherwise.
     """
     # Task 2.5b
-    return contradiction_or_tautology(formula, contradiction=True)
+    return not is_satisfiable(formula)
 
 
 def is_satisfiable(formula: Formula) -> bool:
@@ -356,7 +350,7 @@ def is_satisfiable(formula: Formula) -> bool:
         ``True`` if the given formula is satisfiable, ``False`` otherwise.
     """
     # Task 2.5c
-    return not is_contradiction(formula)
+    return any(truth_values(formula, all_models(list(formula.variables()))))
 
 
 def _synthesize_for_model(model: Model) -> Formula:
