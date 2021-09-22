@@ -10,27 +10,47 @@ operators."""
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import wraps  # lazy getter decorator
+from functools import wraps  # Class-level lazy getter decorator
 
 from propositions.semantics import *
 from propositions.syntax import *
 
 
-def lazyprop(op):
-    transform_to: str = "to_" + op.__name__
+class LazyClassProperty:
+    def __init__(self, wrapped):
+        self.wrapped = wrapped
+        try:
+            self.__doc__ = wrapped.__doc__
+        except:  # pragma: no cover
+            pass
 
-    @property
-    @wraps(op)
-    def _memoize_op(self):
-        if not hasattr(self, transform_to):
-            setattr(self, transform_to, op(self))
-        return getattr(self, transform_to)
+    # original sets the attributes on the instance
+    # def __get__(self, inst, objtype=None):
+    #    if inst is None:
+    #        return self
+    #    val = self.wrapped(inst)
+    #    setattr(inst, self.wrapped.__name__, val)
+    #    return val
 
-    return _memoize_op
+    # ignore the instance, and just set them on the class
+    # if called on a class, inst is None and objtype is the class
+    # if called on an instance, inst is the instance, and objtype
+    # the class
+    def __get__(self, inst, objtype=None):
+        # ask the value from the wrapped object, giving it
+        # our class
+        val = self.wrapped(objtype)
+
+        # and set the attribute directly to the class, thereby
+        # avoiding the descriptor to be called multiple times
+        setattr(objtype, self.wrapped.__name__, val)
+
+        # and return the calculated value
+        return val
 
 
 class TransformOperators:
-    @lazyprop
+    @LazyClassProperty
     def not_or_and(self) -> Dict[str, Formula]:
         return {
             BINARY_IMPLY: Formula.parse("(~p|q)"),
@@ -42,7 +62,7 @@ class TransformOperators:
             FALSE_OP: Formula.parse("(p&~p)"),
         }
 
-    @lazyprop
+    @LazyClassProperty
     def nand(self) -> Dict[str, Formula]:
         return {
             BINARY_OR: Formula(
@@ -60,11 +80,11 @@ class TransformOperators:
             ),
         }
 
-    @lazyprop
+    @LazyClassProperty
     def not_and(self) -> Dict[str, Formula]:
         return {BINARY_OR: ~(~Placeholder.first & ~Placeholder.second)}
 
-    @lazyprop
+    @LazyClassProperty
     def implies_not(self) -> Dict[str, Formula]:
         return {
             BINARY_AND: ~Formula(
@@ -75,7 +95,7 @@ class TransformOperators:
             ),
         }
 
-    @lazyprop
+    @LazyClassProperty
     def implies_false(self) -> Dict[str, Formula]:
         return {
             NEGATE_SYM: Formula(
@@ -106,9 +126,6 @@ class Placeholder:
     second: Formula = Formula("q")
 
 
-transform_operators_to: TransformOperators = TransformOperators()
-
-
 def to_not_and_or(formula: Formula) -> Formula:
     """Syntactically converts the given formula to an equivalent formula that
     contains no constants or operators beyond ``'~'``, ``'&'``, and ``'|'``.
@@ -122,7 +139,7 @@ def to_not_and_or(formula: Formula) -> Formula:
         ``'|'``.
     """
     # Task 3.5
-    return formula.substitute_operators(transform_operators_to.not_or_and)
+    return formula.substitute_operators(TransformOperators.not_or_and)
 
 
 def to_not_and(formula: Formula) -> Formula:
@@ -138,8 +155,8 @@ def to_not_and(formula: Formula) -> Formula:
     """
     # Task 3.6a
     return formula.substitute_operators(
-        transform_operators_to.not_or_and
-    ).substitute_operators(transform_operators_to.not_and)
+        TransformOperators.not_or_and
+    ).substitute_operators(TransformOperators.not_and)
 
 
 def to_nand(formula: Formula) -> Formula:
@@ -155,8 +172,8 @@ def to_nand(formula: Formula) -> Formula:
     """
     # Task 3.6b
     return formula.substitute_operators(
-        transform_operators_to.not_or_and
-    ).substitute_operators(transform_operators_to.nand)
+        TransformOperators.not_or_and
+    ).substitute_operators(TransformOperators.nand)
 
 
 def to_implies_not(formula: Formula) -> Formula:
@@ -172,8 +189,8 @@ def to_implies_not(formula: Formula) -> Formula:
     """
     # Task 3.6c
     return formula.substitute_operators(
-        transform_operators_to.not_or_and
-    ).substitute_operators(transform_operators_to.implies_not)
+        TransformOperators.not_or_and
+    ).substitute_operators(TransformOperators.implies_not)
 
 
 def to_implies_false(formula: Formula) -> Formula:
@@ -189,5 +206,5 @@ def to_implies_false(formula: Formula) -> Formula:
     """
     # Task 3.6d
     return formula.substitute_operators(
-        transform_operators_to.not_or_and
-    ).substitute_operators(transform_operators_to.implies_false)
+        TransformOperators.not_or_and
+    ).substitute_operators(TransformOperators.implies_false)
