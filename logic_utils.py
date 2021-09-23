@@ -86,7 +86,7 @@ class frozendict(Dict[Any, Any]):
 
 S = TypeVar("S")
 
-# TODO - ask Noam why not to use the `lru_cache` instead.
+# `lru_cache` requires parameterized-functions.
 def memoized_parameterless_method(method: Callable[[T], S]) -> Callable[[T], S]:
     """A method decorator for parameterless methods of immutable classes that
     memoizes the return value to avoid recalculation.
@@ -134,14 +134,14 @@ class __prefix_with_index_sequence_generator:
 #: `next`\ ``(``\ `fresh_variable_name_generator`\ ``)`` will return ``'z1'``,
 #: the second call to `next`\ ``(``\ `fresh_variable_name_generator`\ ``)`` will
 #: return ``'z2'``, and so on.
-fresh_variable_name_generator: Iterator[str] = __prefix_with_index_sequence_generator(
-    "z"
-)
+fresh_variable_name_generator: Iterator[
+    str
+] = __prefix_with_index_sequence_generator("z")
 
 #: A generator for fresh constant names. The first call to
 #: `next`\ ``(``\ `fresh_constant_name_generator`\ ``)`` will return ``'c1'``,
 #: the second call to `next`\ ``(``\ `fresh_constant_name_generator`\ ``)`` will
 #: return ``'c2'``, and so on.
-fresh_constant_name_generator: Iterator[str] = __prefix_with_index_sequence_generator(
-    "c"
-)
+fresh_constant_name_generator: Iterator[
+    str
+] = __prefix_with_index_sequence_generator("c")
