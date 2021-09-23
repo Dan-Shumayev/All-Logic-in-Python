@@ -133,7 +133,7 @@ class InferenceRule:
         for variable in specialization_map:
             assert is_variable(variable)
         # Task 4.4
-        substituted_assumptions: Tuple[Formula, ...] = (
+        substituted_assumptions: Tuple[Formula, ...] = tuple(
             formula.substitute_variables(specialization_map)
             for formula in self.assumptions
         )
@@ -145,9 +145,9 @@ class InferenceRule:
 
     @staticmethod
     def _merge_specialization_maps(
-        specialization_map1: Union[SpecializationMap, None],
-        specialization_map2: Union[SpecializationMap, None],
-    ) -> Union[SpecializationMap, None]:
+        specialization_map1: Optional[SpecializationMap],
+        specialization_map2: Optional[SpecializationMap],
+    ) -> Optional[SpecializationMap]:
         """Merges the given specialization maps while checking their
         consistency.
 
@@ -163,16 +163,29 @@ class InferenceRule:
         """
         if specialization_map1 is not None:
             for variable in specialization_map1:
-                assert is_variable(variable)
+                assert is_variable(variable), "Only variables can be mapped."
         if specialization_map2 is not None:
             for variable in specialization_map2:
-                assert is_variable(variable)
+                assert is_variable(variable), "Only variables can be mapped."
         # Task 4.5a
+
+        if specialization_map1 is None or specialization_map2 is None:
+            return None
+
+        common_keys = set(specialization_map1.keys()) & set(
+            specialization_map2.keys()
+        )
+        if any(
+            specialization_map1[k] != specialization_map2[k]
+            for k in common_keys
+        ):
+            return None
+        return {**specialization_map1, **specialization_map2}
 
     @staticmethod
     def _formula_specialization_map(
         general: Formula, specialization: Formula
-    ) -> Union[SpecializationMap, None]:
+    ) -> Optional[SpecializationMap]:
         """Computes the minimal specialization map by which the given formula
         specializes to the given specialization.
 
@@ -185,6 +198,29 @@ class InferenceRule:
             in fact not a specialization of `general`.
         """
         # Task 4.5b
+
+        if is_operator(general.root) and is_operator(specialization.root):
+            if general.root == specialization.root:
+                if is_binary(general.root):
+                    return InferenceRule._merge_specialization_maps(
+                        InferenceRule._formula_specialization_map(
+                            general.first, specialization.first  # type: ignore
+                        ),
+                        InferenceRule._formula_specialization_map(
+                            general.second, specialization.second  # type: ignore
+                        ),
+                    )
+                if is_unary(general.root):
+                    return InferenceRule._formula_specialization_map(
+                        general.first, specialization.first  # type: ignore
+                    )
+                return {}  # T -> T / F -> F is redundant
+            return None
+        if is_variable(general.root) and is_variable(specialization.root):
+            return {general.root: Formula(specialization.root)}
+        if is_variable(general.root) and is_operator(specialization.root):
+            return {general.root: specialization}
+        return None
 
     def specialization_map(
         self, specialization: InferenceRule

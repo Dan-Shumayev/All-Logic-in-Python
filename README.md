@@ -65,6 +65,7 @@
     - **Ways of proving incompleteness of operator sets**:
         - **Incompleteness proof** - Showing that every boolean function over the said set of operators is preserving some property denoted by `P` (usually done by induction). Hence, we show that there is an operator that does not hold the `P`-preserveness (so the first set lacks at least one operator `->` isn't complete).
         - **Another way to refute set-completeness** - Showing that every boolean function using only the said set of operators is affine by showing that every subset of the operators is equivalent to `XOR` and `~`. Now, we know that the operator `&` is not affine, thus the affine set is not complete.
+            - **Note:** - Each operator is affine if there exists an isomorphic matrix of the form Ax + b (in particular, any linear transformation is affine). Note that `<->` is affine as it can be expressed as a composition of affines (`Negation` of `XOR` which are both linear transformations.)
         - **Another way to refute set-completeness** - Showing that every boolean function using the said set of operators is *monotone* (Changing an input from `F` to `T` never changes the output from `T` to `F`). `~` is not monotone. hence is not in the set, and the set is incomplete.
 </details>
 
@@ -72,5 +73,9 @@
 <summary><code>Chapter 4</code> - <b>Proofs</b></summary>
 
 - **Anatomy of a deductive proof** - Using syntactic inference rules `R` and a set of given assumptions, we infer conclusions out of the previous rules and conclusions.
+    - *Inference rule* - List (of a non-negative length) consiting of formulas (i.e. represented by the `Formula` object) that function as assumptions, and a formula that is their conclusion.
+    - *Soundness* - We say that a set `A` of formulas **entails** a formula `φ` if every model that satisfies all the assumptions in `A` also satisfies `φ`. We denote *A entails `φ`* by `A ⊨ φ`.
+        - It may be also *trivially* sound, when there is no model that satisfies the set of assumptions at all (`A`).
+    - *Specialization* - We may refer to inference rules as templates where their variable names serve as placeholders for any kind of formulas.
 - `Hilbert-style proof` - 
 </details>

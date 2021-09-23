@@ -251,6 +251,20 @@ def is_binary(string: str) -> bool:
     return string in {"&", "|", "->", "+", "<->", "-&", "-|"}
 
 
+@lru_cache(maxsize=100)
+def is_operator(string: str) -> bool:
+    """Checks if the given string is a binary or unary operator.
+
+    Parameters:
+        string: string to check.
+
+    Returns:
+        ``True`` iff the given string is either a binary or unary operator,
+        ``False`` otherwise.
+    """
+    return is_unary(string) or is_binary(string) or is_constant(string)
+
+
 @frozen
 class Formula:
     r"""An immutable propositional formula in tree representation, composed from
