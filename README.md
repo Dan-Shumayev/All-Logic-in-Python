@@ -69,7 +69,8 @@
 </details>
 
 <details>
-<summary><code>Chapter 4</code> - <b>Proof by deduction</b></summary>
+<summary><code>Chapter 4</code> - <b>Proofs</b></summary>
 
--
+- **Anatomy of a deductive proof** - Using syntactic inference rules `R` and a set of given assumptions, we infer conclusions out of the previous rules and conclusions.
+- `Hilbert-style proof` - 
 </details>

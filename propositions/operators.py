@@ -17,33 +17,21 @@ from propositions.syntax import *
 
 
 class LazyClassProperty:
-    def __init__(self, wrapped):
-        self.wrapped = wrapped
+    def __init__(self, wrapped_property):
+        self._wrapped = wrapped_property
         try:
-            self.__doc__ = wrapped.__doc__
+            # Duplicate its docstring if exists
+            self.__doc__ = wrapped_property.__doc__
         except:  # pragma: no cover
             pass
 
-    # original sets the attributes on the instance
-    # def __get__(self, inst, objtype=None):
-    #    if inst is None:
-    #        return self
-    #    val = self.wrapped(inst)
-    #    setattr(inst, self.wrapped.__name__, val)
-    #    return val
-
-    # ignore the instance, and just set them on the class
-    # if called on a class, inst is None and objtype is the class
-    # if called on an instance, inst is the instance, and objtype
-    # the class
     def __get__(self, inst, objtype=None):
-        # ask the value from the wrapped object, giving it
-        # our class
-        val = self.wrapped(objtype)
+        # ask the value from the wrapped object, giving it to our class
+        val = self._wrapped(objtype)
 
-        # and set the attribute directly to the class, thereby
+        # set the attribute directly to the class, thereby
         # avoiding the descriptor to be called multiple times
-        setattr(objtype, self.wrapped.__name__, val)
+        setattr(objtype, self._wrapped.__name__, val)
 
         # and return the calculated value
         return val
