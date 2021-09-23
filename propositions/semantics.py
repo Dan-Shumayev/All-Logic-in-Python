@@ -562,6 +562,9 @@ def evaluate_inference(rule: InferenceRule, model: Model) -> bool:
     """
     assert is_model(model)
     # Task 4.2
+    if not all(evaluate(formula, model) for formula in rule.assumptions):
+        return True  # Not satisfiable -> trivially holds
+    return evaluate(rule.conclusion, model)
 
 
 def is_sound_inference(rule: InferenceRule) -> bool:
