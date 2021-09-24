@@ -172,7 +172,7 @@ class InferenceRule:
         if specialization_map1 is None or specialization_map2 is None:
             return None
 
-        common_keys = set(specialization_map1.keys()) & set(
+        common_keys: Set[str] = set(specialization_map1.keys()) & set(
             specialization_map2.keys()
         )
         if any(
@@ -224,7 +224,7 @@ class InferenceRule:
 
     def specialization_map(
         self, specialization: InferenceRule
-    ) -> Union[SpecializationMap, None]:
+    ) -> Optional[SpecializationMap]:
         """Computes the minimal specialization map by which the current
         inference rule specializes to the given specialization.
 
@@ -236,6 +236,21 @@ class InferenceRule:
             in fact not a specialization of the current rule.
         """
         # Task 4.5c
+        specialization_map: Optional[SpecializationMap] = dict()
+
+        if len(self.assumptions) != len(specialization.assumptions):
+            return None
+
+        for grule, srule in zip(
+            self.assumptions + (self.conclusion,),
+            specialization.assumptions + (specialization.conclusion,),
+        ):
+            specialization_map = InferenceRule._merge_specialization_maps(
+                specialization_map,
+                InferenceRule._formula_specialization_map(grule, srule),
+            )
+
+        return specialization_map if specialization_map else None
 
     def is_specialization_of(self, general: InferenceRule) -> bool:
         """Checks if the current inference rule is a specialization of the given
