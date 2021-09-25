@@ -9,9 +9,9 @@
 from functools import wraps  # Adjust the wrapped function's meta-data
 from typing import Any, Callable, Dict, Iterator, Set, Type, TypeVar, cast
 
-# TODO - Understand everything done below:
-
 T = TypeVar("T")  # Used for declaring a generic type
+
+# TODO - Understand frozendict, and __prefix_with_index_sequence_generator impl.:
 
 
 def frozen(cls: Type[T]) -> Type[T]:
@@ -25,6 +25,7 @@ def frozen(cls: Type[T]) -> Type[T]:
         The given class, modified so that assignment to instance variable is
         disallowed after construction.
     """
+    # Delegates to wrappers:
     original_init = cls.__init__
     original_setattr = cls.__setattr__
     original_delattr = cls.__delattr__

@@ -11,7 +11,6 @@ from __future__ import annotations
 from typing import (
     AbstractSet,
     FrozenSet,
-    List,
     Mapping,
     Optional,
     Sequence,
@@ -399,7 +398,7 @@ class Proof:
         r += "QED\n"
         return r
 
-    def rule_for_line(self, line_number: int) -> Union[InferenceRule, None]:
+    def rule_for_line(self, line_number: int) -> Optional[InferenceRule]:
         """Computes the inference rule whose conclusion is the formula justified
         by the specified line, and whose assumptions are the formulas justified
         by the lines specified as the assumptions of that line.
@@ -415,6 +414,16 @@ class Proof:
         """
         assert line_number < len(self.lines)
         # Task 4.6a
+        specified_line: Proof.Line = self.lines[line_number]
+        if specified_line.is_assumption():
+            return None
+
+        rule_assumptions: Tuple[Formula, ...] = tuple(
+            self.lines[assumption_no].formula
+            for assumption_no in specified_line.assumptions  # type: ignore
+        )
+
+        return InferenceRule(rule_assumptions, self.lines[line_number].formula)
 
     def is_line_valid(self, line_number: int) -> bool:
         """Checks if the specified line validly follows from its justifications.
