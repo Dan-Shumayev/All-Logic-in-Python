@@ -21,6 +21,7 @@ from typing import (
 )
 
 from logic_utils import frozen, memoized_parameterless_method
+from typing_extensions import Concatenate
 
 from propositions.syntax import *
 
@@ -485,6 +486,18 @@ class Proof:
             statement via its inference rules, ``False`` otherwise.
         """
         # Task 4.6c
+        if all(
+            self.is_line_valid(line_no) for line_no, _ in enumerate(self.lines)
+        ):
+            if not self.lines:  # Based only on proof's rules
+                return any(
+                    self.statement.is_specialization_of(rule)
+                    for rule in self.rules
+                )
+            return (
+                self.statement.conclusion
+                == self.rule_for_line(len(self.lines) - 1).conclusion
+            )
 
 
 # Chapter 5 tasks
