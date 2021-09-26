@@ -496,8 +496,9 @@ class Proof:
                 )
             return (
                 self.statement.conclusion
-                == self.rule_for_line(len(self.lines) - 1).conclusion
+                == self.rule_for_line(len(self.lines) - 1).conclusion  # type: ignore
             )
+        return False
 
 
 # Chapter 5 tasks
