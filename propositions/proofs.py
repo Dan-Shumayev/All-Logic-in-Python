@@ -450,9 +450,6 @@ class Proof:
         """
         assert line_number < len(self.lines)
         # Task 4.6b
-
-        from typing import List
-
         line_to_check: Proof.Line = self.lines[line_number]
         if line_to_check.rule is None:  # Treated as an assumption
             return (
@@ -462,20 +459,22 @@ class Proof:
             )
 
         line_implied_by_rule: InferenceRule = line_to_check.rule
-        line_rule: InferenceRule = self.rule_for_line(line_number)
-        line_assumptions = line_to_check.assumptions
+        line_rule: InferenceRule = self.rule_for_line(line_number)  # type: ignore
+        line_assumptions: Tuple[int, ...] = line_to_check.assumptions  # type: ignore
 
-        if line_implied_by_rule in self.rules and all(
-            line_number > line_assumption
-            for line_assumption in line_assumptions
+        if (
+            line_implied_by_rule in self.rules
+            and all(
+                line_number > line_assumption
+                for line_assumption in line_assumptions
+            )
+            and (
+                not line_assumptions
+                or line_rule.is_specialization_of(line_implied_by_rule)
+            )
         ):
-            if not line_assumptions:
-                return line_rule.is_specialization_of(line_implied_by_rule)
-            if not line_rule.is_specialization_of(line_implied_by_rule):
-                return False
-        else:
-            return False
-        return True
+            return line_rule.is_specialization_of(line_implied_by_rule)
+        return False
 
     def is_valid(self) -> bool:
         """Checks if the current proof is a valid proof of its claimed statement
