@@ -59,6 +59,22 @@ def prove_I0() -> Proof:
         `~propositions.axiomatic_systems.D`.
     """
     # Task 4.8
+    conclusion = Formula.parse("(p->p)")
+
+    rules = {MP, I1, D}
+    assumption: Sequence[Formula] = []
+    statement = InferenceRule(assumption, conclusion)
+    lines = [
+        Proof.Line(
+            Formula.parse("((p->((p->p)->p))->((p->(p->p))->(p->p)))"), D, ()
+        ),
+        Proof.Line(Formula.parse("(p->((p->p)->p))"), I1, ()),
+        Proof.Line(Formula.parse("((p->(p->p))->(p->p))"), MP, (1, 0)),
+        Proof.Line(Formula.parse("(p->(p->p))"), I1, ()),
+        Proof.Line(Formula.parse("(p->p)"), MP, (3, 2)),
+    ]
+
+    return Proof(statement, rules, lines)
 
 
 #: Hypothetical syllogism

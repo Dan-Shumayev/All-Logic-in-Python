@@ -77,5 +77,4 @@
     - *Soundness* - We say that a set `A` of formulas **entails** a formula `φ` if every model that satisfies all the assumptions in `A` also satisfies `φ`. We denote *A entails `φ`* by `A ⊨ φ`.
         - It may be also *trivially* sound, when there is no model that satisfies the set of assumptions at all (`A`).
     - *Specialization* - We may refer to inference rules as templates where their variable names serve as placeholders for any kind of formulas.
-- `Hilbert-style proof` - 
 </details>
