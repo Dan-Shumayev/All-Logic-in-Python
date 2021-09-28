@@ -31,9 +31,9 @@ def rule_nonsoundness_from_specialization_nonsoundness(
     assert specialization.is_specialization_of(general)
     assert not evaluate_inference(specialization, model)
     # Task 4.9
-    specialization_map: SpecializationMap = (
-        general.specialization_map(specialization)  # type: ignore
-    )
+    specialization_map: SpecializationMap = general.specialization_map(
+        specialization
+    )  # type: ignore
 
     return {
         var: evaluate(specialized_var, model)
@@ -60,3 +60,14 @@ def nonsound_rule_of_nonsound_proof(
     assert proof.is_valid()
     assert not evaluate_inference(proof.statement, model)
     # Task 4.10
+    for line_no, line in enumerate(proof.lines):
+        line_rule: Optional[InferenceRule] = proof.rule_for_line(line_no)
+        rule_used_by_line: Optional[InferenceRule] = line.rule
+
+        if not line.is_assumption() and not evaluate_inference(
+            line_rule, model  # type: ignore
+        ):
+            model_for_rule: Model = rule_nonsoundness_from_specialization_nonsoundness(
+                rule_used_by_line, line_rule, model  # type: ignore
+            )
+            return (rule_used_by_line, model_for_rule)
