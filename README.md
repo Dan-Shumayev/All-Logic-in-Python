@@ -80,5 +80,11 @@
     - **The Soundness Theorem** (The glue between the syntactic and semantic proofs) - An inference rule is *sound* if its assumptions *entail* (every model satisying the assumptions so satifies the conclusion) its conclusion.
     - **The theorem** - An inference rule that is proven only using sound inference rules, is itself sound. Actually, it promises us that everything we have done so far (syntactic proofs) is not redundant, but does proves a conclusion is true.
         - *Sketch of Proof* - Assume by the way of contradiction that all the inference rules (previous lines in proof) are sound but there is a model that does not satisfy the required conclusion (i.e. the conclusion isn't sound). Hence, it implies that there is at least one previous line that is not sound, in contradiction to the assumption.
-        - *Semantics of Specializaiton*  - A specialization of a sound inference rule is itself sound. The proof goes the same (*I have discovered a truly marvelous proof of this, which this margin is too narrow to contain*).
+        - *Semantics of Specializaiton*  - A specialization of a sound inference rule (and for a proof of a sound inference rule) is itself sound. The proof goes the same (*I have discovered a truly marvelous proof of this, which this margin is too narrow to contain*).
+</details>
+
+<details>
+<summary><code>Chapter 5</code> - <b>...</b></summary>
+
+- 
 </details>

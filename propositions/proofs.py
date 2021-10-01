@@ -520,6 +520,40 @@ def prove_specialization(proof: Proof, specialization: InferenceRule) -> Proof:
     assert specialization.is_specialization_of(proof.statement)
     # Task 5.1
 
+    var_to_specialized_formula: SpecializationMap = proof.statement.specialization_map(  # type: ignore
+        specialization
+    )
+
+    specialized_statement: InferenceRule = proof.statement.specialize(
+        var_to_specialized_formula
+    )
+    specialized_lines: Tuple[Proof.Line, ...] = ()
+    for line in proof.lines:
+        if hasattr(line, "assumptions"):
+            specialized_lines += (
+                Proof.Line(
+                    line.formula.substitute_variables(
+                        var_to_specialized_formula
+                    ),
+                    line.rule,
+                    line.assumptions,
+                ),
+            )
+        else:
+            specialized_lines += (
+                Proof.Line(
+                    line.formula.substitute_variables(
+                        var_to_specialized_formula
+                    ),
+                ),
+            )
+
+    return Proof(
+        specialized_statement,
+        proof.rules,
+        specialized_lines,
+    )
+
 
 def _inline_proof_once(
     main_proof: Proof, line_number: int, lemma_proof: Proof

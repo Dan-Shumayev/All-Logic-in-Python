@@ -70,4 +70,4 @@ def nonsound_rule_of_nonsound_proof(
             model_for_rule: Model = rule_nonsoundness_from_specialization_nonsoundness(
                 rule_used_by_line, line_rule, model  # type: ignore
             )
-            return (rule_used_by_line, model_for_rule)
+            return (rule_used_by_line, model_for_rule)  # type: ignore
