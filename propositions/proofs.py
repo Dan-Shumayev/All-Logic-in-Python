@@ -11,13 +11,12 @@ from __future__ import annotations
 from typing import (
     AbstractSet,
     FrozenSet,
-    Generator,
+    List,
     Mapping,
     Optional,
     Sequence,
     Set,
     Tuple,
-    Union,
 )
 
 from logic_utils import frozen, memoized_parameterless_method
@@ -355,8 +354,9 @@ class Proof:
             )
             self.formula = formula
             self.rule = rule
-            if assumptions is not None:
-                self.assumptions = tuple(assumptions)
+            self.assumptions = (
+                tuple(assumptions) if assumptions is not None else None
+            )
 
         def __repr__(self) -> str:
             """Computes a string representation of the current line.
@@ -420,12 +420,14 @@ class Proof:
         if specified_line.is_assumption():
             return None
 
-        rule_assumptions: Tuple[Formula, ...] = tuple(
+        rule_assumptions: Tuple[Formula, ...] = [
             self.lines[assumption_no].formula
             for assumption_no in specified_line.assumptions  # type: ignore
-        )
+        ]
 
-        return InferenceRule(rule_assumptions, self.lines[line_number].formula)
+        return InferenceRule(
+            tuple(rule_assumptions), self.lines[line_number].formula
+        )
 
     def is_line_valid(self, line_number: int) -> bool:
         """Checks if the specified line validly follows from its justifications.
@@ -519,7 +521,6 @@ def prove_specialization(proof: Proof, specialization: InferenceRule) -> Proof:
     assert proof.is_valid()
     assert specialization.is_specialization_of(proof.statement)
     # Task 5.1
-
     var_to_specialized_formula: SpecializationMap = proof.statement.specialization_map(  # type: ignore
         specialization
     )
@@ -527,26 +528,14 @@ def prove_specialization(proof: Proof, specialization: InferenceRule) -> Proof:
     specialized_statement: InferenceRule = proof.statement.specialize(
         var_to_specialized_formula
     )
-    specialized_lines: Tuple[Proof.Line, ...] = ()
-    for line in proof.lines:
-        if hasattr(line, "assumptions"):
-            specialized_lines += (
-                Proof.Line(
-                    line.formula.substitute_variables(
-                        var_to_specialized_formula
-                    ),
-                    line.rule,
-                    line.assumptions,
-                ),
-            )
-        else:
-            specialized_lines += (
-                Proof.Line(
-                    line.formula.substitute_variables(
-                        var_to_specialized_formula
-                    ),
-                ),
-            )
+    specialized_lines: List[Proof.Line] = [
+        Proof.Line(
+            line.formula.substitute_variables(var_to_specialized_formula),
+            line.rule,
+            line.assumptions,
+        )
+        for line in proof.lines
+    ]
 
     return Proof(
         specialized_statement,
