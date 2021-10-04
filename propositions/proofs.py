@@ -586,6 +586,7 @@ def _inline_proof_once(
                         line.formula, assumption_line.formula
                     ):
                         lemma_lines_adjusted.append(assumption_line)
+                        break  # Only one such specialized assumption is expected
 
         return Proof(
             specialized_lemma.statement,
@@ -657,3 +658,18 @@ def inline_proof(main_proof: Proof, lemma_proof: Proof) -> Proof:
         proved by `lemma_proof`.
     """
     # Task 5.2b
+    current_inlined_proof: Proof = main_proof
+    shift_by = 0
+    specialized_rule: InferenceRule
+    for line_no, line in enumerate(main_proof.lines):
+        if line.rule and line.rule.is_specialization_of(lemma_proof.statement):
+            current_inlined_proof = _inline_proof_once(
+                current_inlined_proof, line_no + shift_by, lemma_proof
+            )
+            shift_by += len(lemma_proof.lines) - 1
+            specialized_rule = line.rule
+    return Proof(
+        current_inlined_proof.statement,
+        current_inlined_proof.rules - {specialized_rule},
+        current_inlined_proof.lines,
+    )
