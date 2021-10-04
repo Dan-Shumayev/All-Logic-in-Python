@@ -236,21 +236,46 @@ class InferenceRule:
             in fact not a specialization of the current rule.
         """
         # Task 4.5c
-        specialization_map: Optional[SpecializationMap] = dict()
-
+        spec: Optional[SpecializationMap] = dict()
         if len(self.assumptions) != len(specialization.assumptions):
             return None
 
-        for grule, srule in zip(
-            self.assumptions + (self.conclusion,),
-            specialization.assumptions + (specialization.conclusion,),
+        for my_assump, spec_assump in zip(
+            self.assumptions, specialization.assumptions
         ):
-            specialization_map = InferenceRule._merge_specialization_maps(
-                specialization_map,
-                InferenceRule._formula_specialization_map(grule, srule),
+            spec = InferenceRule._merge_specialization_maps(
+                spec,
+                InferenceRule._formula_specialization_map(
+                    my_assump, spec_assump
+                ),
             )
+            if not spec:
+                return None
 
-        return specialization_map if specialization_map else None
+        spec = InferenceRule._merge_specialization_maps(
+            spec,
+            InferenceRule._formula_specialization_map(
+                self.conclusion, specialization.conclusion
+            ),
+        )
+
+        return spec
+
+        # specialization_map: Optional[SpecializationMap] = dict()
+
+        # if len(self.assumptions) != len(specialization.assumptions):
+        #     return None
+
+        # for grule, srule in zip(
+        #     self.assumptions + (self.conclusion,),
+        #     specialization.assumptions + (specialization.conclusion,),
+        # ):
+        #     specialization_map = InferenceRule._merge_specialization_maps(
+        #         specialization_map,
+        #         InferenceRule._formula_specialization_map(grule, srule),
+        #     )
+
+        # return specialization_map if specialization_map else None
 
     def is_specialization_of(self, general: InferenceRule) -> bool:
         """Checks if the current inference rule is a specialization of the given
@@ -455,26 +480,15 @@ class Proof:
         # Task 4.6b
         line_to_check: Proof.Line = self.lines[line_number]
         if line_to_check.rule is None:  # Treated as an assumption
-            return (
-                True
-                if line_to_check.formula in self.statement.assumptions
-                else False
-            )
+            return line_to_check.formula in self.statement.assumptions
 
         line_implied_by_rule: InferenceRule = line_to_check.rule
         line_rule: InferenceRule = self.rule_for_line(line_number)  # type: ignore
         line_assumptions: Tuple[int, ...] = line_to_check.assumptions  # type: ignore
 
-        if (
-            line_implied_by_rule in self.rules
-            and all(
-                line_number > line_assumption
-                for line_assumption in line_assumptions
-            )
-            and (
-                not line_assumptions
-                or line_rule.is_specialization_of(line_implied_by_rule)
-            )
+        if line_implied_by_rule in self.rules and all(
+            line_number > line_assumption
+            for line_assumption in line_assumptions
         ):
             return line_rule.is_specialization_of(line_implied_by_rule)
         return False
@@ -572,6 +586,101 @@ def _inline_proof_once(
     assert main_proof.lines[line_number].rule == lemma_proof.statement
     assert lemma_proof.is_valid()
     # Task 5.2a
+
+    def shift_assumption_numbers(lemma: Proof, line_number: int) -> Proof:
+        lemma_lines_adjusted = []
+        for line in lemma.lines:
+            if line.assumptions:
+                assumptions: Tuple[int, ...] = ()
+                for assum_no in line.assumptions:
+                    assum_no_in_main_proof: int = (
+                        assum_no
+                        + line_number
+                        # - len(lemma_proof.statement.assumptions)
+                    )
+                    assumptions += (assum_no_in_main_proof,)
+                lemma_lines_adjusted.append(
+                    Proof.Line(line.formula, line.rule, assumptions)
+                )
+            else:
+                if line.rule:
+                    lemma_lines_adjusted.append(
+                        Proof.Line(line.formula, line.rule, line.assumptions)
+                    )
+                else:
+                    for assum_no in main_proof.lines[line_number].assumptions:
+                        if InferenceRule._formula_specialization_map(
+                            line.formula, main_proof.lines[assum_no].formula
+                        ):
+                            lemma_lines_adjusted.append(
+                                main_proof.lines[assum_no]
+                            )
+
+        return Proof(lemma.statement, lemma.rules, lemma_lines_adjusted)
+
+    specialized_lemma: Proof = prove_specialization(
+        lemma_proof, main_proof.rule_for_line(line_number)  # type: ignore
+    )
+    specialized_lemma_adjusted: Proof = shift_assumption_numbers(
+        specialized_lemma, line_number
+    )
+    lines_after_line_number: Tuple[Proof.Line, ...] = tuple(
+        map(
+            lambda line: Proof.Line(
+                line.formula,
+                line.rule,
+                tuple(
+                    map(
+                        lambda assum_no: assum_no
+                        + len(specialized_lemma_adjusted.lines)
+                        - 1
+                        if assum_no >= line_number
+                        else assum_no,
+                        line.assumptions,
+                    )
+                ),
+            )
+            if line.assumptions or line.assumptions == ()
+            else Proof.Line(line.formula),
+            main_proof.lines[line_number + 1 :],
+        )
+    )
+
+    # Debug:
+    # print(f"Main proof - inline liner number {line_number}:")
+    # print(main_proof)
+    # print("lemma_proof:")
+    # print(lemma_proof)
+    # print("Specialized-lemma not adjusted:")
+    # print(specialized_lemma)
+    # print("Specialized-shifted lemma:")
+    # print(specialized_lemma_adjusted)
+    # print("Lines after the inlined line:")
+    # print(
+    #     Proof(main_proof.statement, main_proof.rules, lines_after_line_number)
+    # )
+    # print("Main proof inlined:")
+    # print(
+    #     Proof(
+    #         main_proof.statement,
+    #         main_proof.rules | lemma_proof.rules,
+    #         main_proof.lines[:line_number]
+    #         + specialized_lemma_adjusted.lines
+    #         + lines_after_line_number,
+    #     )
+    # )
+    # print(
+    #     "The amount of assumptions of lemma_proof is"
+    # f" {len(lemma_proof.statement.assumptions)}"
+    # )
+
+    return Proof(
+        main_proof.statement,
+        main_proof.rules | lemma_proof.rules,
+        main_proof.lines[:line_number]
+        + specialized_lemma_adjusted.lines
+        + lines_after_line_number,
+    )
 
 
 def inline_proof(main_proof: Proof, lemma_proof: Proof) -> Proof:

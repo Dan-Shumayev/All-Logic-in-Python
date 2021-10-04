@@ -70,7 +70,7 @@
 </details>
 
 <details>
-<summary><code>Chapter 4</code> - <b>Proofs</b></summary>
+<summary><code>Chapter 4</code> - <b>Deductive Proofs</b></summary>
 
 - **Anatomy of a deductive proof** - Using syntactic inference rules `R` and a set of given assumptions, we infer conclusions out of the previous rules and conclusions.
     - *Inference rule* - List (of a non-negative length) consiting of formulas (i.e. represented by the `Formula` object) that function as assumptions, and a formula that is their conclusion.
