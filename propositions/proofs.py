@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import (
     AbstractSet,
     FrozenSet,
+    Iterable,
     List,
     Mapping,
     Optional,
@@ -236,46 +237,21 @@ class InferenceRule:
             in fact not a specialization of the current rule.
         """
         # Task 4.5c
-        spec: Optional[SpecializationMap] = dict()
+        specialization_map: Optional[SpecializationMap] = dict()
+
         if len(self.assumptions) != len(specialization.assumptions):
             return None
 
-        for my_assump, spec_assump in zip(
-            self.assumptions, specialization.assumptions
+        for grule, srule in zip(
+            self.assumptions + (self.conclusion,),
+            specialization.assumptions + (specialization.conclusion,),
         ):
-            spec = InferenceRule._merge_specialization_maps(
-                spec,
-                InferenceRule._formula_specialization_map(
-                    my_assump, spec_assump
-                ),
+            specialization_map = InferenceRule._merge_specialization_maps(
+                specialization_map,
+                InferenceRule._formula_specialization_map(grule, srule),
             )
-            if not spec:
-                return None
 
-        spec = InferenceRule._merge_specialization_maps(
-            spec,
-            InferenceRule._formula_specialization_map(
-                self.conclusion, specialization.conclusion
-            ),
-        )
-
-        return spec
-
-        # specialization_map: Optional[SpecializationMap] = dict()
-
-        # if len(self.assumptions) != len(specialization.assumptions):
-        #     return None
-
-        # for grule, srule in zip(
-        #     self.assumptions + (self.conclusion,),
-        #     specialization.assumptions + (specialization.conclusion,),
-        # ):
-        #     specialization_map = InferenceRule._merge_specialization_maps(
-        #         specialization_map,
-        #         InferenceRule._formula_specialization_map(grule, srule),
-        #     )
-
-        # return specialization_map if specialization_map else None
+        return specialization_map if specialization_map else None
 
     def is_specialization_of(self, general: InferenceRule) -> bool:
         """Checks if the current inference rule is a specialization of the given
@@ -587,92 +563,71 @@ def _inline_proof_once(
     assert lemma_proof.is_valid()
     # Task 5.2a
 
-    def shift_assumption_numbers(lemma: Proof, line_number: int) -> Proof:
-        lemma_lines_adjusted = []
-        for line in lemma.lines:
-            if line.assumptions:
-                assumptions: Tuple[int, ...] = ()
-                for assum_no in line.assumptions:
-                    assum_no_in_main_proof: int = (
-                        assum_no
-                        + line_number
-                        # - len(lemma_proof.statement.assumptions)
+    # Internal helper functions for building adjusted inlined proof:
+    def adjust_specialized_lemma(specialized_lemma: Proof) -> Proof:
+        lemma_lines_adjusted = list()
+        for line in specialized_lemma.lines:
+            if (
+                line.assumptions is not None
+            ):  # Not an assumption nor determined by a rule
+                shifted_assumptions: Tuple[int, ...] = tuple(
+                    map(
+                        lambda assum_no: assum_no + line_number,
+                        line.assumptions,
                     )
-                    assumptions += (assum_no_in_main_proof,)
-                lemma_lines_adjusted.append(
-                    Proof.Line(line.formula, line.rule, assumptions)
                 )
-            else:
-                if line.rule:
-                    lemma_lines_adjusted.append(
-                        Proof.Line(line.formula, line.rule, line.assumptions)
-                    )
-                else:
-                    for assum_no in main_proof.lines[line_number].assumptions:
-                        if InferenceRule._formula_specialization_map(
-                            line.formula, main_proof.lines[assum_no].formula
-                        ):
-                            lemma_lines_adjusted.append(
-                                main_proof.lines[assum_no]
-                            )
+                lemma_lines_adjusted.append(
+                    Proof.Line(line.formula, line.rule, shifted_assumptions)
+                )
+            else:  # Assumption - copy the very same assumption pointer from main_proof
+                for assum_no in main_proof.lines[line_number].assumptions:  # type: ignore
+                    assumption_line: Proof.Line = main_proof.lines[assum_no]
+                    if InferenceRule._formula_specialization_map(
+                        line.formula, assumption_line.formula
+                    ):
+                        lemma_lines_adjusted.append(assumption_line)
 
-        return Proof(lemma.statement, lemma.rules, lemma_lines_adjusted)
+        return Proof(
+            specialized_lemma.statement,
+            specialized_lemma.rules,
+            lemma_lines_adjusted,
+        )
 
-    specialized_lemma: Proof = prove_specialization(
-        lemma_proof, main_proof.rule_for_line(line_number)  # type: ignore
-    )
-    specialized_lemma_adjusted: Proof = shift_assumption_numbers(
-        specialized_lemma, line_number
-    )
-    lines_after_line_number: Tuple[Proof.Line, ...] = tuple(
-        map(
+    def adjust_assumptions_after_line(
+        assumptions: Tuple[int, ...]
+    ) -> Iterable[int]:
+        shift_assum_no_by: int = (
+            len(specialized_lemma_adjusted.lines) - 1
+        )  # Shift by the amount of lines of the inserted inlined lemma
+        return map(
+            lambda assum_no: assum_no + shift_assum_no_by
+            if assum_no >= line_number
+            else assum_no,
+            assumptions,
+        )
+
+    def adjust_lines_after_line() -> Iterable[Proof.Line]:
+        return map(
             lambda line: Proof.Line(
                 line.formula,
                 line.rule,
-                tuple(
-                    map(
-                        lambda assum_no: assum_no
-                        + len(specialized_lemma_adjusted.lines)
-                        - 1
-                        if assum_no >= line_number
-                        else assum_no,
-                        line.assumptions,
-                    )
-                ),
+                tuple(adjust_assumptions_after_line(line.assumptions)),
             )
-            if line.assumptions or line.assumptions == ()
-            else Proof.Line(line.formula),
+            if line.assumptions is not None
+            else line,
             main_proof.lines[line_number + 1 :],
         )
-    )
 
-    # Debug:
-    # print(f"Main proof - inline liner number {line_number}:")
-    # print(main_proof)
-    # print("lemma_proof:")
-    # print(lemma_proof)
-    # print("Specialized-lemma not adjusted:")
-    # print(specialized_lemma)
-    # print("Specialized-shifted lemma:")
-    # print(specialized_lemma_adjusted)
-    # print("Lines after the inlined line:")
-    # print(
-    #     Proof(main_proof.statement, main_proof.rules, lines_after_line_number)
-    # )
-    # print("Main proof inlined:")
-    # print(
-    #     Proof(
-    #         main_proof.statement,
-    #         main_proof.rules | lemma_proof.rules,
-    #         main_proof.lines[:line_number]
-    #         + specialized_lemma_adjusted.lines
-    #         + lines_after_line_number,
-    #     )
-    # )
-    # print(
-    #     "The amount of assumptions of lemma_proof is"
-    # f" {len(lemma_proof.statement.assumptions)}"
-    # )
+    # Here we're building the main proof inlined:
+    specialized_lemma: Proof = prove_specialization(
+        lemma_proof, main_proof.rule_for_line(line_number)  # type: ignore
+    )
+    specialized_lemma_adjusted: Proof = adjust_specialized_lemma(
+        specialized_lemma
+    )
+    lines_after_line_number: Tuple[Proof.Line, ...] = tuple(
+        adjust_lines_after_line()
+    )
 
     return Proof(
         main_proof.statement,
