@@ -184,7 +184,7 @@ class InferenceRule:
         return {**specialization_map1, **specialization_map2}
 
     @staticmethod
-    def _formula_specialization_map(
+    def formula_specialization_map(
         general: Formula, specialization: Formula
     ) -> Optional[SpecializationMap]:
         """Computes the minimal specialization map by which the given formula
@@ -204,15 +204,15 @@ class InferenceRule:
             if general.root == specialization.root:
                 if is_binary(general.root):
                     return InferenceRule._merge_specialization_maps(
-                        InferenceRule._formula_specialization_map(
+                        InferenceRule.formula_specialization_map(
                             general.first, specialization.first  # type: ignore
                         ),
-                        InferenceRule._formula_specialization_map(
+                        InferenceRule.formula_specialization_map(
                             general.second, specialization.second  # type: ignore
                         ),
                     )
                 if is_unary(general.root):
-                    return InferenceRule._formula_specialization_map(
+                    return InferenceRule.formula_specialization_map(
                         general.first, specialization.first  # type: ignore
                     )
                 return {}  # T -> T / F -> F is redundant
@@ -248,7 +248,7 @@ class InferenceRule:
         ):
             specialization_map = InferenceRule._merge_specialization_maps(
                 specialization_map,
-                InferenceRule._formula_specialization_map(grule, srule),
+                InferenceRule.formula_specialization_map(grule, srule),
             )
 
         return specialization_map if specialization_map else None
@@ -565,7 +565,8 @@ def _inline_proof_once(
 
     # Internal helper functions for building adjusted inlined proof:
     def adjust_specialized_lemma(specialized_lemma: Proof) -> Proof:
-        lemma_lines_adjusted = list()
+        lemma_lines_adjusted: List[Proof.Line] = list()
+
         for line in specialized_lemma.lines:
             if (
                 line.assumptions is not None
@@ -576,23 +577,34 @@ def _inline_proof_once(
                         line.assumptions,
                     )
                 )
+
                 lemma_lines_adjusted.append(
                     Proof.Line(line.formula, line.rule, shifted_assumptions)
                 )
             else:  # Assumption - copy the very same assumption pointer from main_proof
-                for assum_no in main_proof.lines[line_number].assumptions:  # type: ignore
-                    assumption_line: Proof.Line = main_proof.lines[assum_no]
-                    if InferenceRule._formula_specialization_map(
-                        line.formula, assumption_line.formula
-                    ):
-                        lemma_lines_adjusted.append(assumption_line)
-                        break  # Only one such specialized assumption is expected
+                lemma_lines_adjusted.append(
+                    find_specialized_assumption(
+                        main_proof.lines[line_number], line.formula
+                    )
+                )
 
         return Proof(
             specialized_lemma.statement,
             specialized_lemma.rules,
             lemma_lines_adjusted,
         )
+
+    def find_specialized_assumption(
+        line: Proof.Line, specialized_candidate: Formula
+    ) -> Proof.Line:
+        assert line.assumptions, "No assumptions to check"
+        for assum_no in line.assumptions:
+            assumption_line: Proof.Line = main_proof.lines[assum_no]
+
+            if InferenceRule.formula_specialization_map(
+                specialized_candidate, assumption_line.formula
+            ):
+                return assumption_line
 
     def adjust_assumptions_after_line(
         assumptions: Tuple[int, ...]
@@ -659,15 +671,22 @@ def inline_proof(main_proof: Proof, lemma_proof: Proof) -> Proof:
     """
     # Task 5.2b
     current_inlined_proof: Proof = main_proof
-    shift_by = 0
-    specialized_rule: InferenceRule
+    shift_by_lemma_length: int = 0
+    specialized_rule: InferenceRule = None
+
     for line_no, line in enumerate(main_proof.lines):
         if line.rule and line.rule.is_specialization_of(lemma_proof.statement):
             current_inlined_proof = _inline_proof_once(
-                current_inlined_proof, line_no + shift_by, lemma_proof
+                current_inlined_proof,
+                line_no + shift_by_lemma_length,
+                lemma_proof,
             )
-            shift_by += len(lemma_proof.lines) - 1
-            specialized_rule = line.rule
+
+            shift_by_lemma_length += len(lemma_proof.lines) - 1
+            specialized_rule = (
+                line.rule
+            )  # Store the rule to delete it from final proof
+
     return Proof(
         current_inlined_proof.statement,
         current_inlined_proof.rules - {specialized_rule},
