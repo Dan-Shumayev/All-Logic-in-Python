@@ -478,18 +478,29 @@ class Proof:
             statement via its inference rules, ``False`` otherwise.
         """
         # Task 4.6c
+
+        if len(self.lines) == 1:  # Proof with only one line -> Var/Constant
+            return is_variable(self.lines[0].formula.root) | is_constant(
+                self.lines[0].formula.root
+            )
+
+        is_conclusion_equal_to_last_line: Callable[[], bool] = (
+            lambda: self.statement.conclusion
+            == self.rule_for_line(len(self.lines) - 1).conclusion  # type: ignore
+        )
+
+        is_statement_justified_by_rule: Callable[[], bool] = lambda: any(
+            self.statement.is_specialization_of(rule) for rule in self.rules
+        )
+
         if all(
             self.is_line_valid(line_no) for line_no, _ in enumerate(self.lines)
         ):
-            if not self.lines:  # Based only on proof's rules
-                return any(
-                    self.statement.is_specialization_of(rule)
-                    for rule in self.rules
-                )
-            return (
-                self.statement.conclusion
-                == self.rule_for_line(len(self.lines) - 1).conclusion  # type: ignore
-            )
+            if not self.lines:  # Statement is based only on proof's rules
+                return is_statement_justified_by_rule()
+
+            return is_conclusion_equal_to_last_line()
+
         return False
 
 
