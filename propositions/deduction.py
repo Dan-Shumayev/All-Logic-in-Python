@@ -34,7 +34,10 @@ def prove_corollary(
     """
     assert antecedent_proof.is_valid()
     corollary_as_axiom: InferenceRule = InferenceRule(
-        [], Formula("->", antecedent_proof.statement.conclusion, consequent)
+        [],
+        Formula(
+            BINARY_IMPLY, antecedent_proof.statement.conclusion, consequent
+        ),
     )
     assert corollary_as_axiom.is_specialization_of(conditional)
     # Task 5.3a
@@ -101,16 +104,16 @@ def combine_proofs(
         == antecedent2_proof.statement.assumptions
     )
 
-    mp_first_assumption: Formula = antecedent1_proof.statement.conclusion
-    mp_second_assumption: Formula = Formula(
-        "->", antecedent2_proof.statement.conclusion, consequent
+    corollary_condition: Formula = antecedent1_proof.statement.conclusion
+    corollary_conclusion: Formula = Formula(
+        BINARY_IMPLY, antecedent2_proof.statement.conclusion, consequent
     )
     corollary_as_axiom: InferenceRule = InferenceRule(
         [],
         Formula(
-            "->",
-            mp_first_assumption,
-            mp_second_assumption,
+            BINARY_IMPLY,
+            corollary_condition,
+            corollary_conclusion,
         ),
     )
 
@@ -121,9 +124,14 @@ def combine_proofs(
     combined_proofs_statement: InferenceRule = InferenceRule(
         antecedent1_proof.statement.assumptions, consequent
     )
-
     combined_proofs_rules: AbstractSet[InferenceRule] = (
         antecedent1_proof.rules | {MP} | {double_conditional}
+    )
+
+    antecedent1_proof_length: int = len(antecedent1_proof.lines)
+    antecedent2_proof_length: int = len(antecedent2_proof.lines)
+    combined_proofs_length: int = (
+        antecedent1_proof_length + antecedent2_proof_length
     )
 
     return Proof(
@@ -131,45 +139,30 @@ def combine_proofs(
         combined_proofs_rules,
         [
             *antecedent1_proof.lines,
-            *[
-                Proof.Line(
-                    line.formula,
-                    line.rule,
-                    tuple(
-                        map(
-                            lambda assum_no: assum_no
-                            + len(antecedent1_proof.lines),
-                            line.assumptions,
-                        )
-                    ),
-                )
-                if line.assumptions is not None
-                else line
-                for line in antecedent2_proof.lines
-            ],
+            *increment_assumptions_in_lines(
+                antecedent2_proof.lines, antecedent1_proof_length
+            ),
             Proof.Line(
                 corollary_as_axiom.conclusion,
                 double_conditional,
                 [],
             ),
+            # Apply first Modus Ponens
             Proof.Line(
-                corollary_as_axiom.conclusion.second,
+                corollary_as_axiom.conclusion.second,  # type: ignore
                 MP,
                 [
-                    len(antecedent1_proof.lines) - 1,
-                    len(antecedent1_proof.lines) + len(antecedent2_proof.lines),
+                    antecedent1_proof_length - 1,
+                    combined_proofs_length,
                 ],
             ),
+            # Apply second Modus Ponens
             Proof.Line(
                 consequent,
                 MP,
                 [
-                    len(antecedent1_proof.lines)
-                    + len(antecedent2_proof.lines)
-                    - 1,
-                    len(antecedent1_proof.lines)
-                    + len(antecedent2_proof.lines)
-                    + 1,
+                    combined_proofs_length - 1,
+                    combined_proofs_length + 1,
                 ],
             ),
         ],

@@ -4,6 +4,9 @@
 	"python.linting.mypyPath": "C:/Users/fserv/.virtualenvs/Projects-HuQEBMoV/Scripts/mypy.exe",
 	"python.testing.unittestEnabled": false,
 	"python.testing.pytestEnabled": true,
+	"python.testing.pytestArgs": [
+		"-s" // Enable prints inside Pytest tests
+	],
 	"python.testing.autoTestDiscoverOnSaveEnabled": true,
 	"python.linting.enabled": true,
 	"python.linting.mypyEnabled": true,

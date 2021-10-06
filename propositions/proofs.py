@@ -547,6 +547,38 @@ def prove_specialization(proof: Proof, specialization: InferenceRule) -> Proof:
     )
 
 
+def shift_assumptions_by(
+    assumptions: Tuple[int, ...], shift_by: int, threshold: int = -1
+) -> Iterable[int]:
+    return map(
+        lambda assum_no: assum_no + shift_by
+        if assum_no >= threshold
+        else assum_no,
+        assumptions,
+    )
+
+
+def increment_assumptions_in_lines(
+    lines: Tuple[Proof.Line, ...], shift_assum_by: int, threshold: int = -1
+) -> Iterable[Proof.Line]:
+    return map(
+        lambda line: Proof.Line(
+            line.formula,
+            line.rule,
+            tuple(
+                shift_assumptions_by(
+                    line.assumptions,
+                    shift_assum_by,
+                    threshold,
+                )
+            ),
+        )
+        if line.assumptions is not None
+        else line,
+        lines,
+    )
+
+
 def _inline_proof_once(
     main_proof: Proof, line_number: int, lemma_proof: Proof
 ) -> Proof:
@@ -584,15 +616,14 @@ def _inline_proof_once(
             if (
                 line.assumptions is not None
             ):  # Not an assumption nor determined by a rule
-                shifted_assumptions: Tuple[int, ...] = tuple(
-                    map(
-                        lambda assum_no: assum_no + line_number,
-                        line.assumptions,
-                    )
-                )
-
                 lemma_lines_adjusted.append(
-                    Proof.Line(line.formula, line.rule, shifted_assumptions)
+                    Proof.Line(
+                        line.formula,
+                        line.rule,
+                        tuple(
+                            shift_assumptions_by(line.assumptions, line_number)
+                        ),
+                    )
                 )
             else:  # Assumption - copy the very same assumption pointer from main_proof
                 lemma_lines_adjusted.append(
@@ -619,31 +650,6 @@ def _inline_proof_once(
             ):
                 return assumption_line
 
-    def adjust_assumptions_after_line(
-        assumptions: Tuple[int, ...]
-    ) -> Iterable[int]:
-        shift_assum_no_by: int = (
-            len(specialized_lemma_adjusted.lines) - 1
-        )  # Shift by the amount of lines of the inserted inlined lemma
-        return map(
-            lambda assum_no: assum_no + shift_assum_no_by
-            if assum_no >= line_number
-            else assum_no,
-            assumptions,
-        )
-
-    def adjust_lines_after_line() -> Iterable[Proof.Line]:
-        return map(
-            lambda line: Proof.Line(
-                line.formula,
-                line.rule,
-                tuple(adjust_assumptions_after_line(line.assumptions)),
-            )
-            if line.assumptions is not None
-            else line,
-            main_proof.lines[line_number + 1 :],
-        )
-
     # Here we're building the main proof inlined:
     specialized_lemma: Proof = prove_specialization(
         lemma_proof, main_proof.rule_for_line(line_number)  # type: ignore
@@ -652,7 +658,11 @@ def _inline_proof_once(
         specialized_lemma
     )
     lines_after_line_number: Tuple[Proof.Line, ...] = tuple(
-        adjust_lines_after_line()
+        increment_assumptions_in_lines(
+            main_proof.lines[line_number + 1 :],
+            len(specialized_lemma_adjusted.lines) - 1,
+            line_number,
+        )
     )
 
     return Proof(
