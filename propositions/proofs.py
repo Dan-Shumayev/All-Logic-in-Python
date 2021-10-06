@@ -480,8 +480,10 @@ class Proof:
         # Task 4.6c
 
         if len(self.lines) == 1:  # Proof with only one line -> Var/Constant
-            return is_variable(self.lines[0].formula.root) | is_constant(
-                self.lines[0].formula.root
+            return (
+                is_variable(self.lines[0].formula.root)
+                | is_constant(self.lines[0].formula.root)
+                | is_unary(self.lines[0].formula.root)
             )
 
         is_conclusion_equal_to_last_line: Callable[[], bool] = (

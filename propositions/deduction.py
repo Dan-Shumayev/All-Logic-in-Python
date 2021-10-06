@@ -100,16 +100,80 @@ def combine_proofs(
         antecedent1_proof.statement.assumptions
         == antecedent2_proof.statement.assumptions
     )
-    assert antecedent1_proof.rules == antecedent2_proof.rules
-    assert InferenceRule(
+
+    mp_first_assumption: Formula = antecedent1_proof.statement.conclusion
+    mp_second_assumption: Formula = Formula(
+        "->", antecedent2_proof.statement.conclusion, consequent
+    )
+    corollary_as_axiom: InferenceRule = InferenceRule(
         [],
         Formula(
             "->",
-            antecedent1_proof.statement.conclusion,
-            Formula("->", antecedent2_proof.statement.conclusion, consequent),
+            mp_first_assumption,
+            mp_second_assumption,
         ),
-    ).is_specialization_of(double_conditional)
+    )
+
+    assert antecedent1_proof.rules == antecedent2_proof.rules
+    assert corollary_as_axiom.is_specialization_of(double_conditional)
     # Task 5.3b
+
+    combined_proofs_statement: InferenceRule = InferenceRule(
+        antecedent1_proof.statement.assumptions, consequent
+    )
+
+    combined_proofs_rules: AbstractSet[InferenceRule] = (
+        antecedent1_proof.rules | {MP} | {double_conditional}
+    )
+
+    return Proof(
+        combined_proofs_statement,
+        combined_proofs_rules,
+        [
+            *antecedent1_proof.lines,
+            *[
+                Proof.Line(
+                    line.formula,
+                    line.rule,
+                    tuple(
+                        map(
+                            lambda assum_no: assum_no
+                            + len(antecedent1_proof.lines),
+                            line.assumptions,
+                        )
+                    ),
+                )
+                if line.assumptions is not None
+                else line
+                for line in antecedent2_proof.lines
+            ],
+            Proof.Line(
+                corollary_as_axiom.conclusion,
+                double_conditional,
+                [],
+            ),
+            Proof.Line(
+                corollary_as_axiom.conclusion.second,
+                MP,
+                [
+                    len(antecedent1_proof.lines) - 1,
+                    len(antecedent1_proof.lines) + len(antecedent2_proof.lines),
+                ],
+            ),
+            Proof.Line(
+                consequent,
+                MP,
+                [
+                    len(antecedent1_proof.lines)
+                    + len(antecedent2_proof.lines)
+                    - 1,
+                    len(antecedent1_proof.lines)
+                    + len(antecedent2_proof.lines)
+                    + 1,
+                ],
+            ),
+        ],
+    )
 
 
 def remove_assumption(proof: Proof) -> Proof:
