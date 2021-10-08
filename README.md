@@ -74,7 +74,7 @@
 
 - **Anatomy of a deductive proof** - Using syntactic inference rules `R` and a set of given assumptions, we infer conclusions out of the previous rules and conclusions.
     - *Inference rule* - List (of a non-negative length) consiting of formulas (i.e. represented by the `Formula` object) that function as assumptions, and a formula that is their conclusion.
-    - *Soundness* - We say that a set `A` of formulas **entails** a formula `φ` if every model that satisfies all the assumptions in `A` also satisfies `φ`. We denote *A entails `φ`* by `A ⊨ φ`.
+    - *Soundness* - We say that a set `A` of formulas **entails** a formula `ψ` if every model that satisfies all the assumptions in `A` also satisfies `ψ`. We denote *A entails `ψ`* by `A ⊨ ψ`.
         - It may be also *trivially* sound, when there is no model that satisfies the set of assumptions at all (`A`).
     - *Specialization* - We may refer to inference rules as templates where their variable names serve as placeholders for any kind of formulas.
     - **The Soundness Theorem** (The glue between the syntactic and semantic proofs) - An inference rule is *sound* if its assumptions *entail* (every model satisying the assumptions so satifies the conclusion) its conclusion.
@@ -84,7 +84,10 @@
 </details>
 
 <details>
-<summary><code>Chapter 5</code> - <b>...</b></summary>
+<summary><code>Chapter 5</code> - <b>Deductive proofs - continued</b></summary>
 
-- 
+- **Deduction Theorem** -
+    - *Modus Ponens* - Given that `p` and `p->q` hold, we can deduce `q`.
+        - First direction - We can use *MP* in order to turn axiomatic-like inference rules (`{} ⊨ φ->ψ`) to a regular proof (`{φ}->ψ`) using only the *Modus Ponens* rule. 
+        - Second direction - if `{φ}->ψ` then `{} ⊨ φ->ψ`. More generally, for any set of additional assumptions `A`, if `A∪{φ} ⊨ ψ` then `A ⊨ φ->ψ`.
 </details>

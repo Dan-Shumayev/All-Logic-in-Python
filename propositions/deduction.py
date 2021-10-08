@@ -45,9 +45,7 @@ def prove_corollary(
     statement: InferenceRule = InferenceRule(
         antecedent_proof.statement.assumptions, consequent
     )
-    rules: FrozenSet[InferenceRule] = (
-        antecedent_proof.rules | {conditional} | {MP}
-    )
+    rules: FrozenSet[InferenceRule] = antecedent_proof.rules | {conditional, MP}
 
     antec_proof_lines_len: int = len(antecedent_proof.lines)
 
@@ -124,9 +122,9 @@ def combine_proofs(
     combined_proofs_statement: InferenceRule = InferenceRule(
         antecedent1_proof.statement.assumptions, consequent
     )
-    combined_proofs_rules: AbstractSet[InferenceRule] = (
-        antecedent1_proof.rules | {MP} | {double_conditional}
-    )
+    combined_proofs_rules: AbstractSet[
+        InferenceRule
+    ] = antecedent1_proof.rules | {MP, double_conditional}
 
     antecedent1_proof_length: int = len(antecedent1_proof.lines)
     antecedent2_proof_length: int = len(antecedent2_proof.lines)
@@ -194,6 +192,135 @@ def remove_assumption(proof: Proof) -> Proof:
     for rule in proof.rules:
         assert rule == MP or len(rule.assumptions) == 0
     # Task 5.4
+
+    def find_formula_index(
+        proof_lines: List[Proof.Line], formula: Formula
+    ) -> int:
+        for ix, line in enumerate(proof_lines):
+            if line.formula == formula:
+                return ix
+
+    assumption_to_remove: Formula = proof.statement.assumptions[-1]
+
+    statement_conclusion: Formula = Formula(
+        BINARY_IMPLY, assumption_to_remove, proof.statement.conclusion
+    )
+    statement_to_prove: InferenceRule = InferenceRule(
+        list(proof.statement.assumptions[:-1]), statement_conclusion
+    )
+    allowed_rules: AbstractSet[InferenceRule] = proof.rules | {MP, I0, I1, D}
+    deduced_lines: List[Proof.Line] = list()
+
+    for line_no, line in enumerate(proof.lines):
+        if line.is_assumption():
+            if line.formula == assumption_to_remove:  # Removed assumption
+                deduced_lines.append(
+                    Proof.Line(
+                        Formula(
+                            BINARY_IMPLY,
+                            assumption_to_remove,
+                            assumption_to_remove,
+                        ),
+                        I0,
+                        [],
+                    )
+                )
+            else:  # Another assumption in a set `A`
+                required_conclusion: Formula = Formula(
+                    BINARY_IMPLY,
+                    assumption_to_remove,
+                    line.formula,
+                )
+                deduced_lines.extend(
+                    [
+                        line,
+                        Proof.Line(
+                            Formula(
+                                BINARY_IMPLY,
+                                line.formula,
+                                required_conclusion,
+                            ),
+                            I1,
+                            [],
+                        ),
+                        Proof.Line(
+                            required_conclusion,
+                            MP,
+                            [len(deduced_lines), len(deduced_lines) + 1],
+                        ),
+                    ]
+                )
+        elif not line.rule.assumptions:  # Justified by an assumptionless rule
+            required_conclusion = Formula(
+                BINARY_IMPLY,
+                assumption_to_remove,
+                line.formula,
+            )
+
+            deduced_lines.extend(
+                [
+                    line,
+                    Proof.Line(
+                        Formula(
+                            BINARY_IMPLY,
+                            line.formula,
+                            required_conclusion,
+                        ),
+                        I1,
+                        [],
+                    ),
+                    Proof.Line(
+                        required_conclusion,
+                        MP,
+                        [len(deduced_lines), len(deduced_lines) + 1],
+                    ),
+                ]
+            )
+        else:  # Justified by two assumptions - MP
+            specialization_map: SpecializationMap = {
+                "p": assumption_to_remove,
+                "q": proof.lines[line.assumptions[0]].formula,
+                "r": line.formula,
+            }
+            apply_d_rule: Formula = D.conclusion.substitute_variables(
+                specialization_map
+            )
+            deduced_lines.extend(
+                [
+                    Proof.Line(apply_d_rule, D, []),
+                    Proof.Line(
+                        apply_d_rule.second,
+                        MP,
+                        [
+                            find_formula_index(
+                                deduced_lines,
+                                apply_d_rule.first,
+                            ),
+                            len(deduced_lines),
+                        ],
+                    ),
+                    Proof.Line(
+                        apply_d_rule.second.second,
+                        MP,
+                        [
+                            find_formula_index(
+                                deduced_lines, apply_d_rule.second.first
+                            ),
+                            len(deduced_lines) + 1,
+                        ],
+                    ),
+                ]
+            )
+
+    conclusion_line: Proof.Line = deduced_lines.pop()
+    deduced_lines.append(
+        Proof.Line(
+            statement_conclusion,
+            conclusion_line.rule,
+            conclusion_line.assumptions,
+        )
+    )
+    return Proof(statement_to_prove, allowed_rules, deduced_lines)
 
 
 def prove_from_opposites(

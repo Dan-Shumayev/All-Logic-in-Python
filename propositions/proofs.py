@@ -626,6 +626,7 @@ def _inline_proof_once(
                     )
                 )
             else:  # Assumption - copy the very same assumption pointer from main_proof
+                # TODO - something smelly here, scrutinize find_specialized_assumption
                 lemma_lines_adjusted.append(
                     find_specialized_assumption(
                         main_proof.lines[line_number], line.formula
@@ -645,9 +646,7 @@ def _inline_proof_once(
         for assum_no in line.assumptions:
             assumption_line: Proof.Line = main_proof.lines[assum_no]
 
-            if InferenceRule.formula_specialization_map(
-                specialized_candidate, assumption_line.formula
-            ):
+            if specialized_candidate == assumption_line.formula:
                 return assumption_line
 
     # Here we're building the main proof inlined:
@@ -694,18 +693,19 @@ def inline_proof(main_proof: Proof, lemma_proof: Proof) -> Proof:
     """
     # Task 5.2b
     current_inlined_proof: Proof = main_proof
-    shift_by_lemma_length: int = 0
-    specialized_rule: InferenceRule = None
+    shift_by_current_lemma_length: int = 0
+    specialized_rule: InferenceRule
 
     for line_no, line in enumerate(main_proof.lines):
+        # This condition is assumed to hold at least once
         if line.rule and line.rule.is_specialization_of(lemma_proof.statement):
             current_inlined_proof = _inline_proof_once(
                 current_inlined_proof,
-                line_no + shift_by_lemma_length,
+                line_no + shift_by_current_lemma_length,
                 lemma_proof,
             )
 
-            shift_by_lemma_length += len(lemma_proof.lines) - 1
+            shift_by_current_lemma_length += len(lemma_proof.lines) - 1
             specialized_rule = (
                 line.rule
             )  # Store the rule to delete it from final proof
