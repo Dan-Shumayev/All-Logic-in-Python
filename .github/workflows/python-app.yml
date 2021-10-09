@@ -39,4 +39,4 @@ jobs:
     - name: Test with pytest
       run: |
         pipenv lock --pre --clear
-        pytest propositions/*_test.py -k '_ex1 or _ex2 or _ex3 or _ex4'
+        pipenv run pytest propositions/*_test.py -k '_ex1 or _ex2 or _ex3 or _ex4'
