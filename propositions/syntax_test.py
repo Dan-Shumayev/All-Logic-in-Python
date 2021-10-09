@@ -192,26 +192,26 @@ def test_parse(debug=False):
 # Tests for optional tasks in Chapter 1
 
 
-def test_polish(debug=False):
-    if debug:
-        print("Testing polish of formula 'x12'")
-    assert Formula("x12").polish() == "x12"
-    if debug:
-        print("Testing polish of formula '|pp' (in infix: '(p|p)')")
-    assert Formula("|", Formula("p"), Formula("p")).polish() == "|pp"
-    if debug:
-        print("Testing polish of formula '~&pq7' (in infix: '~(p&q7)')")
-    assert (
-        Formula("~", Formula("&", Formula("p"), Formula("q7"))).polish()
-        == "~&pq7"
-    )
+# def test_polish(debug=False):
+#     if debug:
+#         print("Testing polish of formula 'x12'")
+#     assert Formula("x12").polish() == "x12"
+#     if debug:
+#         print("Testing polish of formula '|pp' (in infix: '(p|p)')")
+#     assert Formula("|", Formula("p"), Formula("p")).polish() == "|pp"
+#     if debug:
+#         print("Testing polish of formula '~&pq7' (in infix: '~(p&q7)')")
+#     assert (
+#         Formula("~", Formula("&", Formula("p"), Formula("q7"))).polish()
+#         == "~&pq7"
+#     )
 
 
-def test_parse_polish(debug=False):
-    for polish in ["p", "~x12", "&xy", "~~|x~T", "|&x1~x2F"]:
-        if debug:
-            print("Testing polish parsing of formula", polish)
-        assert Formula.parse_polish(polish).polish() == polish
+# def test_parse_polish(debug=False):
+#     for polish in ["p", "~x12", "&xy", "~~|x~T", "|&x1~x2F"]:
+#         if debug:
+#             print("Testing polish parsing of formula", polish)
+#         assert Formula.parse_polish(polish).polish() == polish
 
 
 # Tests for Chapter 3
@@ -495,9 +495,9 @@ def test_ex1(debug=False):
     test_parse(debug)
 
 
-def test_ex_1_opt(debug=False):
-    test_polish(debug)
-    test_parse_polish(debug)
+# def test_ex_1_opt(debug=False):
+#     test_polish(debug)
+#     test_parse_polish(debug)
 
 
 def test_ex3(debug=False):
@@ -514,5 +514,5 @@ def test_ex3(debug=False):
 
 def test_all(debug=False):
     test_ex1(debug)
-    test_ex_1_opt(debug)
+    # test_ex_1_opt(debug)
     test_ex3(debug)

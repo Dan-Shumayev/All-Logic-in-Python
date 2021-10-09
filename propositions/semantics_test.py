@@ -239,10 +239,10 @@ def test_synthesize_for_model(debug=False):
     __test_synthesize_clause(_synthesize_for_model, True, debug)
 
 
-def test_synthesize_for_all_except_model(debug=False):
-    from propositions.semantics import _synthesize_for_all_except_model
+# def test_synthesize_for_all_except_model(debug=False):
+#     from propositions.semantics import _synthesize_for_all_except_model
 
-    __test_synthesize_clause(_synthesize_for_all_except_model, False, debug)
+#     __test_synthesize_clause(_synthesize_for_all_except_model, False, debug)
 
 
 def __test_synthesize_clause(clause_synthesizer, for_model, debug):
