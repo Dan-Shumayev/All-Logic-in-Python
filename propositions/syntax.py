@@ -553,25 +553,25 @@ class Formula:
 
     # Optional tasks for Chapter 1
 
-    def polish(self) -> str:
-        """Computes the polish notation representation of the current formula.
+    # def polish(self) -> str:
+    #     """Computes the polish notation representation of the current formula.
 
-        Returns:
-            The polish notation representation of the current formula.
-        """
-        # Optional Task 1.7
+    #     Returns:
+    #         The polish notation representation of the current formula.
+    #     """
+    #     # Optional Task 1.7
 
-    @staticmethod
-    def parse_polish(string: str) -> Formula:
-        """Parses the given polish notation representation into a formula.
+    # @staticmethod
+    # def parse_polish(string: str) -> Formula:
+    #     """Parses the given polish notation representation into a formula.
 
-        Parameters:
-            string: string to parse.
+    #     Parameters:
+    #         string: string to parse.
 
-        Returns:
-            A formula whose polish notation representation is the given string.
-        """
-        # Optional Task 1.8
+    #     Returns:
+    #         A formula whose polish notation representation is the given string.
+    #     """
+    #     # Optional Task 1.8
 
     def substitute_variables(
         self, substitution_map: Mapping[str, Formula]
