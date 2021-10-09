@@ -38,4 +38,4 @@ jobs:
     #     flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        pytest
+        pytest propositions/*_test.py -k '_ex1 or _ex2 or _ex3 or _ex4'
