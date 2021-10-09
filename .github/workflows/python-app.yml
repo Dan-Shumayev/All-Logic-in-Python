@@ -21,6 +21,9 @@ jobs:
       with:
         python-version: 3.7 # Backward compatibility is required
         # python-version: 3.9
+    - name: Install pipenv
+      run: |
+        python -m pip install --upgrade pipenv wheel
     - name: Install dependencies
       run: |
         pipenv install # Install packages found inside Pipfile
