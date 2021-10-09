@@ -96,23 +96,19 @@ def prove_hypothetical_syllogism() -> Proof:
         `~propositions.axiomatic_systems.D`.
     """
     # Task 5.5
+
     helper_assumption_to_remove: Formula = Formula.parse("p")
-    statement: InferenceRule = InferenceRule(
-        HS.assumptions + (helper_assumption_to_remove,), HS.conclusion.second
-    )
+    assumptions: List[Formula] = [*HS.assumptions, helper_assumption_to_remove]
+
+    statement: InferenceRule = InferenceRule(assumptions, Formula.parse("r"))
     rules: AbstractSet[InferenceRule] = {MP, I1, D, I0}
 
-    lines: Tuple[Proof.Line, ...] = tuple()
-    lines += tuple(
-        map(lambda assumption: Proof.Line(assumption), HS.assumptions)
-    ) + (
-        Proof.Line(helper_assumption_to_remove),
+    lines: Tuple[Proof.Line, ...] = tuple(map(Proof.Line, assumptions)) + (
         Proof.Line(Formula.parse("q"), MP, [2, 0]),
         Proof.Line(Formula.parse("r"), MP, [3, 1]),
     )
 
-    proof_to_modify: Proof = Proof(statement, rules, lines)
-    return remove_assumption(proof_to_modify)
+    return remove_assumption(Proof(statement, rules, lines))
 
 
 def prove_I2() -> Proof:
