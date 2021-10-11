@@ -401,6 +401,21 @@ def prove_by_way_of_contradiction(proof: Proof) -> Proof:
     rules: AbstractSet[InferenceRule] = {MP, I0, I1, D, N} | proof.rules
 
     proof_without_last_assum: Proof = remove_assumption(proof)
+    proof_length = len(proof_without_last_assum.lines)
+
+    converse_main_conclusion: Formula = proof.statement.conclusion.first  # type: ignore
+    converse_required_conclusion: Formula = (
+        proof.statement.assumptions[  # type:ignore
+            -1
+        ].first
+    )
+
+    specialized_conclusion_by_n: Formula = Formula(
+        BINARY_IMPLY,
+        converse_main_conclusion,
+        converse_required_conclusion,
+    )
+
     return Proof(
         statement,
         rules,
@@ -410,36 +425,26 @@ def prove_by_way_of_contradiction(proof: Proof) -> Proof:
                 Formula(
                     BINARY_IMPLY,
                     proof_without_last_assum.lines[-1].formula,
-                    Formula(
-                        BINARY_IMPLY,
-                        proof_without_last_assum.lines[-1].formula.second.first,
-                        proof_without_last_assum.lines[-1].formula.first.first,
-                    ),
+                    specialized_conclusion_by_n,
                 ),
                 N,
                 [],
             ),
             Proof.Line(
-                Formula(
-                    BINARY_IMPLY,
-                    proof_without_last_assum.lines[-1].formula.second.first,
-                    proof_without_last_assum.lines[-1].formula.first.first,
-                ),
+                specialized_conclusion_by_n,
                 MP,
                 [
-                    len(proof_without_last_assum.lines) - 1,
-                    len(proof_without_last_assum.lines),
+                    proof_length - 1,
+                    proof_length,
                 ],
             ),
+            Proof.Line(converse_main_conclusion, I0, []),
             Proof.Line(
-                proof_without_last_assum.lines[-1].formula.second.first, I0, []
-            ),
-            Proof.Line(
-                proof_without_last_assum.lines[-1].formula.first.first,
+                converse_required_conclusion,
                 MP,
                 [
-                    len(proof_without_last_assum.lines) + 2,
-                    len(proof_without_last_assum.lines) + 1,
+                    proof_length + 2,
+                    proof_length + 1,
                 ],
             ),
         ],
