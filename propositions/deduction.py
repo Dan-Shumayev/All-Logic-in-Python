@@ -357,49 +357,12 @@ def prove_from_opposites(
         proof_of_affirmation.statement.assumptions, conclusion
     )
     rules: AbstractSet[InferenceRule] = proof_of_affirmation.rules | {MP, I2}
-
-    affirm_proof_length: int = len(proof_of_affirmation.lines)
-    neg_proof_length: int = len(proof_of_negation.lines)
-
-    lines: List[Proof.Line] = [
-        *proof_of_affirmation.lines,
-        *increment_assumptions_in_lines(
-            proof_of_negation.lines, affirm_proof_length
-        ),
-        Proof.Line(
-            Formula(
-                BINARY_IMPLY,
-                proof_of_negation.statement.conclusion,
-                Formula(
-                    BINARY_IMPLY,
-                    proof_of_affirmation.statement.conclusion,
-                    conclusion,
-                ),
-            ),
-            I2,
-            [],
-        ),
-        Proof.Line(
-            Formula(
-                BINARY_IMPLY,
-                proof_of_affirmation.statement.conclusion,
-                conclusion,
-            ),
-            MP,
-            [
-                affirm_proof_length + neg_proof_length - 1,
-                affirm_proof_length + neg_proof_length,
-            ],
-        ),
-        Proof.Line(
-            conclusion,
-            MP,
-            [
-                affirm_proof_length - 1,
-                affirm_proof_length + neg_proof_length + 1,
-            ],
-        ),
-    ]
+    lines: Tuple[Proof.Line, ...] = combine_proofs(
+        proof_of_negation,
+        proof_of_affirmation,
+        conclusion,
+        I2,
+    ).lines
 
     return Proof(statement, rules, lines)
 
