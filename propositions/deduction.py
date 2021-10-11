@@ -394,3 +394,53 @@ def prove_by_way_of_contradiction(proof: Proof) -> Proof:
     for rule in proof.rules:
         assert rule == MP or len(rule.assumptions) == 0
     # Task 5.7
+
+    statement: InferenceRule = InferenceRule(
+        proof.statement.assumptions[:-1], proof.statement.assumptions[-1].first
+    )
+    rules: AbstractSet[InferenceRule] = {MP, I0, I1, D, N} | proof.rules
+
+    proof_without_last_assum: Proof = remove_assumption(proof)
+    return Proof(
+        statement,
+        rules,
+        list(proof_without_last_assum.lines)
+        + [
+            Proof.Line(
+                Formula(
+                    BINARY_IMPLY,
+                    proof_without_last_assum.lines[-1].formula,
+                    Formula(
+                        BINARY_IMPLY,
+                        proof_without_last_assum.lines[-1].formula.second.first,
+                        proof_without_last_assum.lines[-1].formula.first.first,
+                    ),
+                ),
+                N,
+                [],
+            ),
+            Proof.Line(
+                Formula(
+                    BINARY_IMPLY,
+                    proof_without_last_assum.lines[-1].formula.second.first,
+                    proof_without_last_assum.lines[-1].formula.first.first,
+                ),
+                MP,
+                [
+                    len(proof_without_last_assum.lines) - 1,
+                    len(proof_without_last_assum.lines),
+                ],
+            ),
+            Proof.Line(
+                proof_without_last_assum.lines[-1].formula.second.first, I0, []
+            ),
+            Proof.Line(
+                proof_without_last_assum.lines[-1].formula.first.first,
+                MP,
+                [
+                    len(proof_without_last_assum.lines) + 2,
+                    len(proof_without_last_assum.lines) + 1,
+                ],
+            ),
+        ],
+    )
