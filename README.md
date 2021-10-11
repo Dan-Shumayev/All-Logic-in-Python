@@ -90,4 +90,13 @@
     - *Modus Ponens* - Given that `p` and `p->q` hold, we can deduce `q`.
         - First direction - We can use *MP* in order to turn axiomatic-like inference rules (`{} ⊨ φ->ψ`) to a regular proof (`{φ}->ψ`) using only the *Modus Ponens* rule. 
         - Second direction - if `{φ}->ψ` then `{} ⊨ φ->ψ`. More generally, for any set of additional assumptions `A`, if `A∪{φ} ⊨ ψ` then `A ⊨ φ->ψ`.
+- **Proofs by way of contradiction** - To prove that `φ` holds, we assume by contradiction that its negation holds, resulting in a contradiction. Hence, `φ` does hold.
+    - *Inconsistent set of formulas* - Let *R* be a set of *MP*, *I0*, *I2* inference rules as all as possily other assumptionless inference rules, then *A* is said to be incosistent with respect to *R* (that is, it may lead to a contradiction), if one of the following equivalent conditions hold:
+        - The formula `~(p→p)` is provable (via *R*) from the assumptions *A*.
+        - The negation of some axiom (assumptionless inference rule from *R*) is provable from the assumptions *A*.
+        - There exists some formula `φ` such that both `φ` and `~φ` are provable from the assumptions *A*.
+        - **Every** formula `ψ` is provable from the assumptions *A*.
+        - The negation of every axiom (assumptionless inference rule from *R*) is provable from the assumptions *A*.
+            - **Note** - This definition is definitely syntactical and not semantical - we only look for a possible analytical proof.
+    - *Contradiciton* - We expect to get a syntactic contradiction rather than a semantic one.
 </details>

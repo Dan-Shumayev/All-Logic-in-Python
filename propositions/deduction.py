@@ -192,7 +192,7 @@ def remove_assumption(proof: Proof) -> Proof:
     for rule in proof.rules:
         assert rule == MP or len(rule.assumptions) == 0
     # Task 5.4
-
+    # TODO - refactor
     def find_formula_index(
         proof_lines: List[Proof.Line], formula: Formula
     ) -> int:
@@ -352,6 +352,56 @@ def prove_from_opposites(
     )
     assert proof_of_affirmation.rules == proof_of_negation.rules
     # Task 5.6
+
+    statement: InferenceRule = InferenceRule(
+        proof_of_affirmation.statement.assumptions, conclusion
+    )
+    rules: AbstractSet[InferenceRule] = proof_of_affirmation.rules | {MP, I2}
+
+    affirm_proof_length: int = len(proof_of_affirmation.lines)
+    neg_proof_length: int = len(proof_of_negation.lines)
+
+    lines: List[Proof.Line] = [
+        *proof_of_affirmation.lines,
+        *increment_assumptions_in_lines(
+            proof_of_negation.lines, affirm_proof_length
+        ),
+        Proof.Line(
+            Formula(
+                BINARY_IMPLY,
+                proof_of_negation.statement.conclusion,
+                Formula(
+                    BINARY_IMPLY,
+                    proof_of_affirmation.statement.conclusion,
+                    conclusion,
+                ),
+            ),
+            I2,
+            [],
+        ),
+        Proof.Line(
+            Formula(
+                BINARY_IMPLY,
+                proof_of_affirmation.statement.conclusion,
+                conclusion,
+            ),
+            MP,
+            [
+                affirm_proof_length + neg_proof_length - 1,
+                affirm_proof_length + neg_proof_length,
+            ],
+        ),
+        Proof.Line(
+            conclusion,
+            MP,
+            [
+                affirm_proof_length - 1,
+                affirm_proof_length + neg_proof_length + 1,
+            ],
+        ),
+    ]
+
+    return Proof(statement, rules, lines)
 
 
 def prove_by_way_of_contradiction(proof: Proof) -> Proof:
