@@ -1,4 +1,4 @@
-# This file is part of the materials accompanying the book 
+# This file is part of the materials accompanying the book
 # "Mathematical Logic through Python" by Gonczarowski and Nisan,
 # Cambridge University Press. Book site: www.LogicThruPython.org
 # (c) Yannai A. Gonczarowski and Noam Nisan, 2017-2020
@@ -10,11 +10,12 @@ from typing import List, Sequence, Union
 
 from logic_utils import frozendict
 
-from propositions.syntax import *
-from propositions.semantics import *
-from propositions.proofs import *
 from propositions.axiomatic_systems import *
 from propositions.deduction import *
+from propositions.proofs import *
+from propositions.semantics import *
+from propositions.syntax import *
+
 
 def formulas_capturing_model(model: Model) -> List[Formula]:
     """Computes the formulas that capture the given model: ``'``\ `x`\ ``'``
@@ -35,8 +36,15 @@ def formulas_capturing_model(model: Model) -> List[Formula]:
     """
     assert is_model(model)
     # Task 6.1a
+    vars: List[str] = list(model.keys())
+    vars.sort()
+    return [
+        Formula(var) if model[var] else Formula(NEGATE_SYM, Formula(var))
+        for var in vars
+    ]
 
-def prove_in_model(formula: Formula, model:Model) -> Proof:
+
+def prove_in_model(formula: Formula, model: Model) -> Proof:
     """Either proves the given formula or proves its negation, from the formulas
     that capture the given model.
 
@@ -76,12 +84,112 @@ def prove_in_model(formula: Formula, model:Model) -> Proof:
         >>> proof.rules == AXIOMATIC_SYSTEM
         True
     """
-    assert formula.operators().issubset({'->', '~'})
+    assert formula.operators().issubset({"->", "~"})
     assert is_model(model)
     # Task 6.1b
 
-def reduce_assumption(proof_from_affirmation: Proof,
-                      proof_from_negation: Proof) -> Proof:
+    capturing_assumptions: List[Formula] = formulas_capturing_model(model)
+    evaluation: bool = evaluate(formula, model)
+
+    return formula_recursive_proof(
+        formula,
+        evaluation,
+        capturing_assumptions,
+        model,
+    )
+
+
+def formula_recursive_proof(
+    formula: Formula,
+    evaluation: bool,
+    assumptions: List[Formula],
+    model: Model,
+) -> Proof:
+    """Proves a formula recursively.
+
+    Parameters:
+        sub_formula: The current sub-formula to be True/False.
+        evaluation: Whether 'sub_formula' is being proven as True or False.
+        assumptions: Assumptions of the proof (read-only in this context).
+        model: The model of the proof.
+
+    Returns:
+        A proof for the formula.
+    """
+    assert evaluate(formula, model) == evaluation
+
+    conclusion: Formula = formula if evaluation else ~formula
+    statement: InferenceRule = InferenceRule(assumptions, conclusion)
+
+    if is_variable(formula.root):
+        lines: List[Proof.Line] = [
+            Proof.Line(assum) for assum in assumptions
+        ] + [
+            Proof.Line(
+                Formula(
+                    BINARY_IMPLY,
+                    statement.conclusion,
+                    statement.conclusion,
+                ),
+                I0,
+                [],
+            ),
+            Proof.Line(
+                statement.conclusion,
+                MP,
+                [assumptions.index(conclusion), len(assumptions)],
+            ),
+        ]
+
+        return Proof(statement, AXIOMATIC_SYSTEM, lines)
+
+    if is_unary(formula.root):
+        # phi = ~psi
+        phi: Formula = formula
+        psi: Formula = formula.first
+        assert formula.root == "~"
+
+        if evaluation:
+            # We need to prove `phi`, which is equivalent to proving not `psi`
+            return formula_recursive_proof(psi, False, assumptions, model)
+
+        # Otherwise, we need to prove `not phi`, which is equivalent to proving `psi`
+        prove_psi: Proof = formula_recursive_proof(
+            psi, True, assumptions, model
+        )
+
+        return prove_corollary(prove_psi, conclusion, NN)
+
+    if formula.root in [BINARY_IMPLY, NEGATE_SYM]:
+        phi: Formula = formula
+        phi_1: Formula = formula.first
+        phi_2: Formula = formula.second
+
+        if evaluation:
+            if not evaluate(phi_1, model):
+                prove_phi_1: Proof = formula_recursive_proof(
+                    phi_1, False, assumptions, model
+                )
+                return prove_corollary(prove_phi_1, conclusion, I2)
+
+            if evaluate(phi_2, model):
+                prove_phi_2: Proof = formula_recursive_proof(
+                    phi_2, True, assumptions, model
+                )
+                return prove_corollary(prove_phi_2, conclusion, I1)
+        else:
+            prove_phi_1 = formula_recursive_proof(
+                phi_1, True, assumptions, model
+            )
+            prove_phi_2 = formula_recursive_proof(
+                phi_2, False, assumptions, model
+            )
+            return combine_proofs(prove_phi_1, prove_phi_2, conclusion, NI)
+
+
+def reduce_assumption(
+    proof_from_affirmation: Proof, proof_from_negation: Proof
+) -> Proof:
     """Combines the given two proofs, both of the same formula `conclusion` and
     from the same assumptions except that the last assumption of the latter is
     the negation of that of the former, into a single proof of `conclusion` from
@@ -113,16 +221,23 @@ def reduce_assumption(proof_from_affirmation: Proof,
     """
     assert proof_from_affirmation.is_valid()
     assert proof_from_negation.is_valid()
-    assert proof_from_affirmation.statement.conclusion == \
-           proof_from_negation.statement.conclusion
+    assert (
+        proof_from_affirmation.statement.conclusion
+        == proof_from_negation.statement.conclusion
+    )
     assert len(proof_from_affirmation.statement.assumptions) > 0
     assert len(proof_from_negation.statement.assumptions) > 0
-    assert proof_from_affirmation.statement.assumptions[:-1] == \
-           proof_from_negation.statement.assumptions[:-1]
-    assert Formula('~', proof_from_affirmation.statement.assumptions[-1]) == \
-           proof_from_negation.statement.assumptions[-1]
+    assert (
+        proof_from_affirmation.statement.assumptions[:-1]
+        == proof_from_negation.statement.assumptions[:-1]
+    )
+    assert (
+        Formula("~", proof_from_affirmation.statement.assumptions[-1])
+        == proof_from_negation.statement.assumptions[-1]
+    )
     assert proof_from_affirmation.rules == proof_from_negation.rules
     # Task 6.2
+
 
 def prove_tautology(tautology: Formula, model: Model = frozendict()) -> Proof:
     """Proves the given tautology from the formulas that capture the given
@@ -164,10 +279,11 @@ def prove_tautology(tautology: Formula, model: Model = frozendict()) -> Proof:
         True
     """
     assert is_tautology(tautology)
-    assert tautology.operators().issubset({'->', '~'})
+    assert tautology.operators().issubset({"->", "~"})
     assert is_model(model)
-    assert sorted(tautology.variables())[:len(model)] == sorted(model.keys())
+    assert sorted(tautology.variables())[: len(model)] == sorted(model.keys())
     # Task 6.3a
+
 
 def proof_or_counterexample(formula: Formula) -> Union[Proof, Model]:
     """Either proves the given formula or finds a model in which it does not
@@ -182,8 +298,9 @@ def proof_or_counterexample(formula: Formula) -> Union[Proof, Model]:
         formula via `~propositions.axiomatic_systems.AXIOMATIC_SYSTEM`,
         otherwise a model in which the given formula does not hold.
     """
-    assert formula.operators().issubset({'->', '~'})
+    assert formula.operators().issubset({"->", "~"})
     # Task 6.3b
+
 
 def encode_as_formula(rule: InferenceRule) -> Formula:
     """Encodes the given inference rule as a formula consisting of a chain of
@@ -206,6 +323,7 @@ def encode_as_formula(rule: InferenceRule) -> Formula:
     """
     # Task 6.4a
 
+
 def prove_sound_inference(rule: InferenceRule) -> Proof:
     """Proves the given sound inference rule.
 
@@ -219,8 +337,9 @@ def prove_sound_inference(rule: InferenceRule) -> Proof:
     """
     assert is_sound_inference(rule)
     for formula in rule.assumptions + (rule.conclusion,):
-        assert formula.operators().issubset({'->', '~'})
+        assert formula.operators().issubset({"->", "~"})
     # Task 6.4b
+
 
 def model_or_inconsistency(formulas: Sequence[Formula]) -> Union[Model, Proof]:
     """Either finds a model in which all the given formulas hold, or proves
@@ -236,8 +355,9 @@ def model_or_inconsistency(formulas: Sequence[Formula]) -> Union[Model, Proof]:
         `~propositions.axiomatic_systems.AXIOMATIC_SYSTEM`.
     """
     for formula in formulas:
-        assert formula.operators().issubset({'->', '~'})
+        assert formula.operators().issubset({"->", "~"})
     # Task 6.5
+
 
 def prove_in_model_full(formula: Formula, model: Model) -> Proof:
     """Either proves the given formula or proves its negation, from the formulas
@@ -280,6 +400,6 @@ def prove_in_model_full(formula: Formula, model: Model) -> Proof:
         >>> proof.rules == AXIOMATIC_SYSTEM_FULL
         True
     """
-    assert formula.operators().issubset({'T', 'F', '->', '~', '&', '|'})
+    assert formula.operators().issubset({"T", "F", "->", "~", "&", "|"})
     assert is_model(model)
     # Optional Task 6.6

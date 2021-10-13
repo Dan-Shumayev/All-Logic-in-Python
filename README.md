@@ -99,4 +99,27 @@
         - The negation of every axiom (assumptionless inference rule from *R*) is provable from the assumptions *A*.
             - **Note** - This definition is definitely syntactical and not semantical - we only look for a possible analytical proof.
     - *Contradiciton* - We expect to get a syntactic contradiction rather than a semantic one.
+    - *Soundness of Proofs by Way of Contradiction* - Let *R* be a set of inference
+rules that includes *MP*, *I1*, *D*, and *N*, and may additionally include only inference rules with no assumptions. Let *A* be an arbitrary set of formulas, and let `φ` be an additional formula. Then `A ∪ {~φ}` is inconsistent with respect to *R* if any only if `A |- φ` (with respect to *R*).
 </details>
+
+<details>
+<summary><code>Chapter 6</code> - <b>The Tautology Theorem and the Completeness of Propositional Logic</b></summary>
+
+- Here we'll prove that *every sound inference rule is provable by our logic system (Hilbert's system)*, which is described below. First, we fix our logic system to contain the following:
+    - **Logical Operators** - `->` and `~` (*Imply* and *Negate* respectively).
+        - *Note* - We've proved these two are universal operators (Chapter03).
+    - **Axiomatic System** (*Hilbert's System*) - *MP*, *N*, *D*, *I1* are the basic inference rules from which we'll prove anything in our logic system. There are several axioms, *I0*, *I2*, *NN*, *NI*, *R*, which can be derived by our basic rules, and we might show that by the lemma proof (The last optional task in this chapter suggests us to prove it using `is_sound_reference`).
+        - *MP* - Assumptions: `p`, `(p→q)`; Conclusion: `q`
+        - *N* - `((~q→~p)→(p→q))`
+        - *D* - `((p→(q→r))→((p→q)→(p→r)))`
+        - *I1* - `(q→(p→q))`
+        - *I0* - `(p→p)`
+        - *I2* - `(~p→(p→q))`
+        - *NN* - `(p→~~p)`
+        - *NI* - `(p→(~q→~(p→q)))`
+        - *R* - `((q→p)→((~q→p)→p))`
+- *Formula Capturing Assignment* - Given an assignment of a Boolean value b to a variable name `x`, the formula that *captures* this assignment is the formula `x` if b is *True* and is the formula `~x` if `b` is *False*.
+    - **Note** - This definition achieves a transformation from a semantic world of models to the syntactic world of formulas.
+    - *Lemma for Tautology Theorem* - Let `φ` be a formula that only uses the operators `→` and `~`. If `φ` evaluates to *True* in a given model *M*, then `φ` is provable via *H* from the set of formulas that captures *M*. If `φ` evaluates to *False* in *M*, then `~φ` is provable via *H* from the set of formulas that captures *M*.
+    </details>
