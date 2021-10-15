@@ -282,6 +282,25 @@ def prove_tautology(tautology: Formula, model: Model = frozendict()) -> Proof:
     assert sorted(tautology.variables())[: len(model)] == sorted(model.keys())
     # Task 6.3a
 
+    def recurse_with_non_existing_assum(
+        tautology: Formula, model: Model
+    ) -> Tuple[Proof, Proof]:
+        new_last_assum: str = sorted(tautology.variables())[len(model)]
+
+        proof_from_affirmation: Proof = prove_tautology(
+            tautology, model | {new_last_assum: True}
+        )
+        proof_from_negation: Proof = prove_tautology(
+            tautology, model | {new_last_assum: False}
+        )
+
+        return proof_from_affirmation, proof_from_negation
+
+    if tautology.variables() == model.keys():
+        return prove_in_model(tautology, model)
+
+    return reduce_assumption(*recurse_with_non_existing_assum(tautology, model))
+
 
 def proof_or_counterexample(formula: Formula) -> Union[Proof, Model]:
     """Either proves the given formula or finds a model in which it does not

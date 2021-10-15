@@ -184,7 +184,7 @@ class InferenceRule:
         return {**specialization_map1, **specialization_map2}
 
     @staticmethod
-    def _formula_specialization_map(
+    def formula_specialization_map(
         general: Formula, specialization: Formula
     ) -> Optional[SpecializationMap]:
         """Computes the minimal specialization map by which the given formula
@@ -204,15 +204,15 @@ class InferenceRule:
             if general.root == specialization.root:
                 if is_binary(general.root):
                     return InferenceRule._merge_specialization_maps(
-                        InferenceRule._formula_specialization_map(
+                        InferenceRule.formula_specialization_map(
                             general.first, specialization.first  # type: ignore
                         ),
-                        InferenceRule._formula_specialization_map(
+                        InferenceRule.formula_specialization_map(
                             general.second, specialization.second  # type: ignore
                         ),
                     )
                 if is_unary(general.root):
-                    return InferenceRule._formula_specialization_map(
+                    return InferenceRule.formula_specialization_map(
                         general.first, specialization.first  # type: ignore
                     )
                 return {}  # T -> T / F -> F is redundant
@@ -248,7 +248,7 @@ class InferenceRule:
         ):
             specialization_map = InferenceRule._merge_specialization_maps(
                 specialization_map,
-                InferenceRule._formula_specialization_map(grule, srule),
+                InferenceRule.formula_specialization_map(grule, srule),
             )
 
         return specialization_map if specialization_map else None
@@ -480,10 +480,8 @@ class Proof:
         # Task 4.6c
 
         if len(self.lines) == 1:  # Proof with only one line -> Var/Constant
-            return (
-                is_variable(self.lines[0].formula.root)
-                | is_constant(self.lines[0].formula.root)
-                | is_unary(self.lines[0].formula.root)
+            return Formula.is_formula(
+                Formula.formula_obj_to_string(self.lines[0].formula)
             )
 
         is_conclusion_equal_to_last_line: Callable[[], bool] = (
