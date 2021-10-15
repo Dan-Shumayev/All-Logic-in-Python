@@ -36,12 +36,8 @@ def formulas_capturing_model(model: Model) -> List[Formula]:
     """
     assert is_model(model)
     # Task 6.1a
-    vars: List[str] = list(model.keys())
-    vars.sort()
-    return [
-        Formula(var) if model[var] else Formula(NEGATE_SYM, Formula(var))
-        for var in vars
-    ]
+    vars: List[str] = sorted(model.keys())
+    return [Formula(var) if model[var] else ~Formula(var) for var in vars]
 
 
 def prove_in_model(formula: Formula, model: Model) -> Proof:
@@ -108,9 +104,9 @@ def formula_recursive_proof(
     """Proves a formula recursively.
 
     Parameters:
-        sub_formula: The current sub-formula to be True/False.
-        evaluation: Whether 'sub_formula' is being proven as True or False.
-        assumptions: Assumptions of the proof (read-only in this context).
+        formula: The current formula to be True/False.
+        evaluation: Whether `formula` is being proven as True or False.
+        assumptions: Assumptions of the proof (read-only).
         model: The model of the proof.
 
     Returns:
@@ -145,8 +141,7 @@ def formula_recursive_proof(
 
     if is_unary(formula.root):
         # phi = ~psi
-        phi: Formula = formula
-        psi: Formula = formula.first
+        psi: Formula = formula.first  # type: ignore
         assert formula.root == "~"
 
         if evaluation:
@@ -161,11 +156,12 @@ def formula_recursive_proof(
         return prove_corollary(prove_psi, conclusion, NN)
 
     if formula.root in [BINARY_IMPLY, NEGATE_SYM]:
-        phi: Formula = formula
-        phi_1: Formula = formula.first
-        phi_2: Formula = formula.second
+        phi_1: Formula = formula.first  # type: ignore
+        phi_2: Formula = formula.second  # type: ignore
 
-        if evaluation:
+        if (
+            evaluation
+        ):  # Implication does hold, hence at least one of the following holds:
             if not evaluate(phi_1, model):
                 prove_phi_1: Proof = formula_recursive_proof(
                     phi_1, False, assumptions, model
@@ -177,14 +173,10 @@ def formula_recursive_proof(
                     phi_2, True, assumptions, model
                 )
                 return prove_corollary(prove_phi_2, conclusion, I1)
-        else:
-            prove_phi_1 = formula_recursive_proof(
-                phi_1, True, assumptions, model
-            )
-            prove_phi_2 = formula_recursive_proof(
-                phi_2, False, assumptions, model
-            )
-            return combine_proofs(prove_phi_1, prove_phi_2, conclusion, NI)
+        # Otherwise, implication is False
+        prove_phi_1 = formula_recursive_proof(phi_1, True, assumptions, model)
+        prove_phi_2 = formula_recursive_proof(phi_2, False, assumptions, model)
+        return combine_proofs(prove_phi_1, prove_phi_2, conclusion, NI)
 
 
 def reduce_assumption(
@@ -237,6 +229,12 @@ def reduce_assumption(
     )
     assert proof_from_affirmation.rules == proof_from_negation.rules
     # Task 6.2
+    return combine_proofs(
+        remove_assumption(proof_from_affirmation),
+        remove_assumption(proof_from_negation),
+        proof_from_affirmation.statement.conclusion,
+        R,
+    )
 
 
 def prove_tautology(tautology: Formula, model: Model = frozendict()) -> Proof:
