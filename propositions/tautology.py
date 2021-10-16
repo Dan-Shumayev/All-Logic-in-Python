@@ -281,11 +281,11 @@ def prove_tautology(tautology: Formula, model: Model = frozendict()) -> Proof:
     assert is_model(model)
     assert sorted(tautology.variables())[: len(model)] == sorted(model.keys())
     # Task 6.3a
-
+    # TODO - Tests runtime is 20+ secs!
     def recurse_with_non_existing_assum(
         tautology: Formula, model: Model
     ) -> Tuple[Proof, Proof]:
-        new_last_assum: str = sorted(tautology.variables())[len(model)]
+        new_last_assum: str = min(tautology.variables() - model.keys())
 
         proof_from_affirmation: Proof = prove_tautology(
             tautology, model | {new_last_assum: True}
@@ -296,7 +296,7 @@ def prove_tautology(tautology: Formula, model: Model = frozendict()) -> Proof:
 
         return proof_from_affirmation, proof_from_negation
 
-    if tautology.variables() == model.keys():
+    if len(tautology.variables()) == len(model.keys()):
         return prove_in_model(tautology, model)
 
     return reduce_assumption(*recurse_with_non_existing_assum(tautology, model))
