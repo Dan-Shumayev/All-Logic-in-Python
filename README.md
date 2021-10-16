@@ -123,4 +123,8 @@ rules that includes *MP*, *I1*, *D*, and *N*, and may additionally include only 
     - **Note** - This definition achieves a transformation from a semantic world of models to the syntactic world of formulas.
     - *Lemma for Tautology Theorem* - Let `φ` be a formula that only uses the operators `→` and `~`. If `φ` evaluates to *True* in a given model *M*, then `φ` is provable via *H* from the set of formulas that captures *M*. If `φ` evaluates to *False* in *M*, then `~φ` is provable via *H* from the set of formulas that captures *M*.
     - **The Tautology Theorem** - Every tautology is provable from no assumptions via *H*. Thus, for any formula `φ` it is the case that `|= φ` if and only if *|-H* (entails with respect to *H* - Hilbert's axiomatic system) `φ`.
+
+    #### **The completeness theorem for finite sets of formulas**
+    - *Contextual reminder* - The *Tautuology Theorem* stated that any formula which is *True* under every model, is also provable by *H*. Now, the *Completeness Theorem* states that any formula which is *True* under every model **where** also a set *A* of propositions holds, then the formula is also provable by this set of propositions *A*. **Note** - For now, we assme that *A* is finite, but it holds also if infinite, and will be dealing with that later on.
+    
     </details>

@@ -6,6 +6,7 @@
 
 """The Tautology Theorem and its implications."""
 
+from functools import reduce
 from typing import List, Sequence, Union
 
 from logic_utils import frozendict
@@ -347,6 +348,13 @@ def encode_as_formula(rule: InferenceRule) -> Formula:
         q
     """
     # Task 6.4a
+
+    formulas: List[Formula] = list(rule.assumptions) + [rule.conclusion]
+
+    return reduce(
+        lambda f1, f2: Formula(BINARY_IMPLY, f2, f1),
+        formulas[::-1],
+    )
 
 
 def prove_sound_inference(rule: InferenceRule) -> Proof:
