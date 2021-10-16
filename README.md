@@ -122,4 +122,5 @@ rules that includes *MP*, *I1*, *D*, and *N*, and may additionally include only 
 - *Formula Capturing Assignment* - Given an assignment of a Boolean value b to a variable name `x`, the formula that *captures* this assignment is the formula `x` if b is *True* and is the formula `~x` if `b` is *False*.
     - **Note** - This definition achieves a transformation from a semantic world of models to the syntactic world of formulas.
     - *Lemma for Tautology Theorem* - Let `φ` be a formula that only uses the operators `→` and `~`. If `φ` evaluates to *True* in a given model *M*, then `φ` is provable via *H* from the set of formulas that captures *M*. If `φ` evaluates to *False* in *M*, then `~φ` is provable via *H* from the set of formulas that captures *M*.
+    - **The Tautology Theorem** - Every tautology is provable from no assumptions via *H*. Thus, for any formula `φ` it is the case that `|= φ` if and only if *|-H* (entails with respect to *H* - Hilbert's axiomatic system) `φ`.
     </details>
