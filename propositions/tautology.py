@@ -282,7 +282,7 @@ def prove_tautology(tautology: Formula, model: Model = frozendict()) -> Proof:
     assert is_model(model)
     assert sorted(tautology.variables())[: len(model)] == sorted(model.keys())
     # Task 6.3a
-    # TODO - Tests runtime is 20+ secs!
+
     def recurse_with_non_existing_assum(
         tautology: Formula, model: Model
     ) -> Tuple[Proof, Proof]:
@@ -372,6 +372,22 @@ def prove_sound_inference(rule: InferenceRule) -> Proof:
     for formula in rule.assumptions + (rule.conclusion,):
         assert formula.operators().issubset({"->", "~"})
     # Task 6.4b
+
+    proof_as_tautology: Proof = prove_tautology(encode_as_formula(rule))
+    lines: List[Proof.Line] = [
+        Proof.Line(formula) for formula in rule.assumptions
+    ] + list(
+        increment_assumptions_in_lines(
+            proof_as_tautology.lines, len(rule.assumptions)
+        )
+    )
+
+    for ix, _ in enumerate(rule.assumptions):
+        lines.append(
+            Proof.Line(lines[-1].formula.second, MP, [ix, len(lines) - 1]),
+        )
+
+    return Proof(rule, proof_as_tautology.rules, lines)
 
 
 def model_or_inconsistency(formulas: Sequence[Formula]) -> Union[Model, Proof]:

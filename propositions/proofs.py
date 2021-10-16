@@ -486,7 +486,7 @@ class Proof:
 
         is_conclusion_equal_to_last_line: Callable[[], bool] = (
             lambda: self.statement.conclusion
-            == self.rule_for_line(len(self.lines) - 1).conclusion  # type: ignore
+            == self.lines[-1].formula  # type: ignore
         )
 
         is_statement_justified_by_rule: Callable[[], bool] = lambda: any(
