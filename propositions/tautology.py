@@ -382,10 +382,11 @@ def prove_sound_inference(rule: InferenceRule) -> Proof:
         )
     )
 
-    for ix, _ in enumerate(rule.assumptions):
-        lines.append(
-            Proof.Line(lines[-1].formula.second, MP, [ix, len(lines) - 1]),
-        )
+    proof_length: int = len(lines)
+    lines.extend(
+        Proof.Line(lines[-1].formula.second, MP, [ix, proof_length - 1 + ix])
+        for ix, _ in enumerate(rule.assumptions)
+    )
 
     return Proof(rule, proof_as_tautology.rules, lines)
 
@@ -406,6 +407,22 @@ def model_or_inconsistency(formulas: Sequence[Formula]) -> Union[Model, Proof]:
     for formula in formulas:
         assert formula.operators().issubset({"->", "~"})
     # Task 6.5
+
+    variables: Set[str] = reduce(
+        lambda s1, s2: s1 | s2, [formula.variables() for formula in formulas]
+    )
+
+    for model in all_models(list(variables)):
+        if all(evaluate(formula, model) for formula in formulas):
+            return model
+
+    # Otherwise, incosistent set => can prove every formula, in particular '~(p->p)'
+    return prove_sound_inference(
+        InferenceRule(
+            formulas,
+            Formula.parse("~(p->p)"),
+        )
+    )
 
 
 def prove_in_model_full(formula: Formula, model: Model) -> Proof:
