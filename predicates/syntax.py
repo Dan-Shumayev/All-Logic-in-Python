@@ -421,6 +421,22 @@ class Formula:
             The standard string representation of the current formula.
         """
         # Task 7.2
+        if is_equality(self.root):
+            assert len(self.arguments) == 2
+            return f"{str(self.arguments[0])}={str(self.arguments[1])}"
+        if is_unary(self.root):
+            assert self.first
+            return f"~{str(self.first)}"
+        if is_relation(self.root):
+            assert self.arguments is not None
+            args: Sequence[str] = [str(arg) for arg in self.arguments]
+            return f"{self.root}({','.join(args)})"
+        if is_binary(self.root):
+            assert self.first and self.second
+            return f"({str(self.first)}{self.root}{str(self.second)})"
+        if is_quantifier(self.root):
+            assert self.variable and self.statement
+            return f"{self.root}{self.variable}[{str(self.statement)}]"
 
     def __eq__(self, other: object) -> bool:
         """Compares the current formula with the given one.
