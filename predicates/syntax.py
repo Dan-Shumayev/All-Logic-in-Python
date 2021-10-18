@@ -7,14 +7,18 @@
 """Syntactic handling of predicate-logic expressions."""
 
 from __future__ import annotations
+
 from functools import lru_cache
 from typing import AbstractSet, Mapping, Optional, Sequence, Set, Tuple, Union
 
-from logic_utils import fresh_variable_name_generator, frozen, \
-                        memoized_parameterless_method
+from logic_utils import (
+    fresh_variable_name_generator,
+    frozen,
+    memoized_parameterless_method,
+)
+from propositions.syntax import Formula as PropositionalFormula
+from propositions.syntax import is_variable as is_propositional_variable
 
-from propositions.syntax import Formula as PropositionalFormula, \
-                                is_variable as is_propositional_variable
 
 class ForbiddenVariableError(Exception):
     """Raised by `Term.substitute` and `Formula.substitute` when a substituted
@@ -24,6 +28,7 @@ class ForbiddenVariableError(Exception):
         variable_name (`str`): the variable name that was forbidden in the
             context in which a term containing it was to be substituted.
     """
+
     variable_name: str
 
     def __init__(self, variable_name: str):
@@ -37,7 +42,8 @@ class ForbiddenVariableError(Exception):
         assert is_variable(variable_name)
         self.variable_name = variable_name
 
-@lru_cache(maxsize=100) # Cache the return value of is_constant
+
+@lru_cache(maxsize=100)  # Cache the return value of is_constant
 def is_constant(string: str) -> bool:
     """Checks if the given string is a constant name.
 
@@ -47,11 +53,16 @@ def is_constant(string: str) -> bool:
     Returns:
         ``True`` if the given string is a constant name, ``False`` otherwise.
     """
-    return  (((string[0] >= '0' and string[0] <= '9') or \
-              (string[0] >= 'a' and string[0] <= 'e')) and \
-             string.isalnum()) or string == '_'
+    return (
+        (
+            (string[0] >= "0" and string[0] <= "9")
+            or (string[0] >= "a" and string[0] <= "e")
+        )
+        and string.isalnum()
+    ) or string == "_"
 
-@lru_cache(maxsize=100) # Cache the return value of is_variable
+
+@lru_cache(maxsize=100)  # Cache the return value of is_variable
 def is_variable(string: str) -> bool:
     """Checks if the given string is a variable name.
 
@@ -61,9 +72,10 @@ def is_variable(string: str) -> bool:
     Returns:
         ``True`` if the given string is a variable name, ``False`` otherwise.
     """
-    return string[0] >= 'u' and string[0] <= 'z' and string.isalnum()
+    return string[0] >= "u" and string[0] <= "z" and string.isalnum()
 
-@lru_cache(maxsize=100) # Cache the return value of is_function
+
+@lru_cache(maxsize=100)  # Cache the return value of is_function
 def is_function(string: str) -> bool:
     """Checks if the given string is a function name.
 
@@ -73,7 +85,8 @@ def is_function(string: str) -> bool:
     Returns:
         ``True`` if the given string is a function name, ``False`` otherwise.
     """
-    return string[0] >= 'f' and string[0] <= 't' and string.isalnum()
+    return string[0] >= "f" and string[0] <= "t" and string.isalnum()
+
 
 @frozen
 class Term:
@@ -86,6 +99,7 @@ class Term:
         arguments (`~typing.Optional`\\[`~typing.Tuple`\\[`Term`, ...]]): the
             arguments of the root, if the root is a function name.
     """
+
     root: str
     arguments: Optional[Tuple[Term, ...]]
 
@@ -114,6 +128,11 @@ class Term:
             The standard string representation of the current term.
         """
         # Task 7.1
+        if is_constant(self.root) or is_variable(self.root):
+            return self.root
+        assert self.arguments
+        args: Sequence[str] = [str(arg) for arg in self.arguments]
+        return f"{self.root}({','.join(args)})"
 
     def __eq__(self, other: object) -> bool:
         """Compares the current term with the given one.
@@ -126,7 +145,7 @@ class Term:
             current term, ``False`` otherwise.
         """
         return isinstance(other, Term) and str(self) == str(other)
-        
+
     def __ne__(self, other: object) -> bool:
         """Compares the current term with the given one.
 
@@ -196,8 +215,11 @@ class Term:
         """
         # Task 7.5c
 
-    def substitute(self, substitution_map: Mapping[str, Term],
-                   forbidden_variables: AbstractSet[str] = frozenset()) -> Term:
+    def substitute(
+        self,
+        substitution_map: Mapping[str, Term],
+        forbidden_variables: AbstractSet[str] = frozenset(),
+    ) -> Term:
         """Substitutes in the current term, each constant name `construct` or
         variable name `construct` that is a key in `substitution_map` with the
         term `substitution_map`\ ``[``\ `construct`\ ``]``.
@@ -237,7 +259,8 @@ class Term:
             assert is_variable(variable)
         # Task 9.1
 
-@lru_cache(maxsize=100) # Cache the return value of is_equality
+
+@lru_cache(maxsize=100)  # Cache the return value of is_equality
 def is_equality(string: str) -> bool:
     """Checks if the given string is the equality relation.
 
@@ -248,9 +271,10 @@ def is_equality(string: str) -> bool:
         ``True`` if the given string is the equality relation, ``False``
         otherwise.
     """
-    return string == '='
+    return string == "="
 
-@lru_cache(maxsize=100) # Cache the return value of is_relation
+
+@lru_cache(maxsize=100)  # Cache the return value of is_relation
 def is_relation(string: str) -> bool:
     """Checks if the given string is a relation name.
 
@@ -260,9 +284,10 @@ def is_relation(string: str) -> bool:
     Returns:
         ``True`` if the given string is a relation name, ``False`` otherwise.
     """
-    return string[0] >= 'F' and string[0] <= 'T' and string.isalnum()
+    return string[0] >= "F" and string[0] <= "T" and string.isalnum()
 
-@lru_cache(maxsize=100) # Cache the return value of is_unary
+
+@lru_cache(maxsize=100)  # Cache the return value of is_unary
 def is_unary(string: str) -> bool:
     """Checks if the given string is a unary operator.
 
@@ -272,9 +297,10 @@ def is_unary(string: str) -> bool:
     Returns:
         ``True`` if the given string is a unary operator, ``False`` otherwise.
     """
-    return string == '~'
+    return string == "~"
 
-@lru_cache(maxsize=100) # Cache the return value of is_binary
+
+@lru_cache(maxsize=100)  # Cache the return value of is_binary
 def is_binary(string: str) -> bool:
     """Checks if the given string is a binary operator.
 
@@ -284,9 +310,10 @@ def is_binary(string: str) -> bool:
     Returns:
         ``True`` if the given string is a binary operator, ``False`` otherwise.
     """
-    return string == '&' or string == '|' or string == '->'
+    return string == "&" or string == "|" or string == "->"
 
-@lru_cache(maxsize=100) # Cache the return value of is_quantifier
+
+@lru_cache(maxsize=100)  # Cache the return value of is_quantifier
 def is_quantifier(string: str) -> bool:
     """Checks if the given string is a quantifier.
 
@@ -296,7 +323,8 @@ def is_quantifier(string: str) -> bool:
     Returns:
         ``True`` if the given string is a quantifier, ``False`` otherwise.
     """
-    return string == 'A' or string == 'E'
+    return string == "A" or string == "E"
+
 
 @frozen
 class Formula:
@@ -319,6 +347,7 @@ class Formula:
         statement (`~typing.Optional`\\[`Formula`]): the statement quantified by
             the root, if the root is a quantification.
     """
+
     root: str
     arguments: Optional[Tuple[Term, ...]]
     first: Optional[Formula]
@@ -326,10 +355,12 @@ class Formula:
     variable: Optional[str]
     statement: Optional[Formula]
 
-    def __init__(self, root: str,
-                 arguments_or_first_or_variable: Union[Sequence[Term],
-                                                       Formula, str],
-                 second_or_statement: Optional[Formula] = None):
+    def __init__(
+        self,
+        root: str,
+        arguments_or_first_or_variable: Union[Sequence[Term], Formula, str],
+        second_or_statement: Optional[Formula] = None,
+    ):
         """Initializes a `Formula` from its root and root arguments, root
         operands, or root quantified variable name and statement.
 
@@ -346,13 +377,15 @@ class Formula:
         """
         if is_equality(root) or is_relation(root):
             # Populate self.root and self.arguments
-            assert isinstance(arguments_or_first_or_variable, Sequence) and \
-                   not isinstance(arguments_or_first_or_variable, str)
+            assert isinstance(
+                arguments_or_first_or_variable, Sequence
+            ) and not isinstance(arguments_or_first_or_variable, str)
             if is_equality(root):
                 assert len(arguments_or_first_or_variable) == 2
             assert second_or_statement is None
-            self.root, self.arguments = \
-                root, tuple(arguments_or_first_or_variable)
+            self.root, self.arguments = root, tuple(
+                arguments_or_first_or_variable
+            )
         elif is_unary(root):
             # Populate self.first
             assert isinstance(arguments_or_first_or_variable, Formula)
@@ -362,16 +395,23 @@ class Formula:
             # Populate self.first and self.second
             assert isinstance(arguments_or_first_or_variable, Formula)
             assert second_or_statement is not None
-            self.root, self.first, self.second = \
-                root, arguments_or_first_or_variable, second_or_statement
+            self.root, self.first, self.second = (
+                root,
+                arguments_or_first_or_variable,
+                second_or_statement,
+            )
         else:
             assert is_quantifier(root)
             # Populate self.variable and self.statement
-            assert isinstance(arguments_or_first_or_variable, str) and \
-                   is_variable(arguments_or_first_or_variable)
+            assert isinstance(
+                arguments_or_first_or_variable, str
+            ) and is_variable(arguments_or_first_or_variable)
             assert second_or_statement is not None
-            self.root, self.variable, self.statement = \
-                root, arguments_or_first_or_variable, second_or_statement
+            self.root, self.variable, self.statement = (
+                root,
+                arguments_or_first_or_variable,
+                second_or_statement,
+            )
 
     @memoized_parameterless_method
     def __repr__(self) -> str:
@@ -393,7 +433,7 @@ class Formula:
             current formula, ``False`` otherwise.
         """
         return isinstance(other, Formula) and str(self) == str(other)
-        
+
     def __ne__(self, other: object) -> bool:
         """Compares the current formula with the given one.
 
@@ -483,9 +523,11 @@ class Formula:
         """
         # Task 7.6e
 
-    def substitute(self, substitution_map: Mapping[str, Term],
-                   forbidden_variables: AbstractSet[str] = frozenset()) -> \
-            Formula:
+    def substitute(
+        self,
+        substitution_map: Mapping[str, Term],
+        forbidden_variables: AbstractSet[str] = frozenset(),
+    ) -> Formula:
         """Substitutes in the current formula, each constant name `construct` or
         free occurrence of variable name `construct` that is a key in
         `substitution_map` with the term
@@ -533,8 +575,9 @@ class Formula:
             assert is_variable(variable)
         # Task 9.2
 
-    def propositional_skeleton(self) -> Tuple[PropositionalFormula,
-                                              Mapping[str, Formula]]:
+    def propositional_skeleton(
+        self,
+    ) -> Tuple[PropositionalFormula, Mapping[str, Formula]]:
         """Computes a propositional skeleton of the current formula.
 
         Returns:
@@ -560,9 +603,9 @@ class Formula:
         # Task 9.8
 
     @staticmethod
-    def from_propositional_skeleton(skeleton: PropositionalFormula,
-                                    substitution_map: Mapping[str, Formula]) \
-            -> Formula:
+    def from_propositional_skeleton(
+        skeleton: PropositionalFormula, substitution_map: Mapping[str, Formula]
+    ) -> Formula:
         """Computes a predicate-logic formula from a propositional skeleton and
         a substitution map.
 
