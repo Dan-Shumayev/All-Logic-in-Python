@@ -9,7 +9,18 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import AbstractSet, Mapping, Optional, Sequence, Set, Tuple, Union
+from operator import methodcaller
+from re import compile as re_compile
+from typing import (
+    AbstractSet,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 from logic_utils import (
     fresh_variable_name_generator,
@@ -18,6 +29,8 @@ from logic_utils import (
 )
 from propositions.syntax import Formula as PropositionalFormula
 from propositions.syntax import is_variable as is_propositional_variable
+
+FormulaPrefix = Tuple["Term", str]  # "" for Forward Reference
 
 
 class ForbiddenVariableError(Exception):
@@ -86,6 +99,76 @@ def is_function(string: str) -> bool:
         ``True`` if the given string is a function name, ``False`` otherwise.
     """
     return string[0] >= "f" and string[0] <= "t" and string.isalnum()
+
+
+class TermParser:
+    """
+    |   Recursive-Descent Parser for Terms
+    |   Here is the grammar:
+    |
+    |   Var ::= [u-z] possibly followed by a number
+    |   Const ::= [0-9a-e][\w*] | _
+    |   Term ::= <Var> | <Const> | <Func>
+    |   Func ::= [f-t][\w*](<Term>,<Term>,<Term>,...) - At least one <Term>
+    |   R ::= [F-T][\w*](<Term>,<Term>,<Term>,...) - Nullary relations allowed
+    |   Formula ::= <Term>=<Term> | <R> | ~<Formula> | (Formula*Formula) where `*`
+    |   is one of `|`, `&`, or `->` | [A|E]<Var>[<Formula>] where `A` and `E` indicate
+    |   the logical quantifiers `∀` and `∃` repectively.
+    """
+
+    # Regexes to match the respective tokens
+    VAR_REGEX = re_compile(r"^[u-z]+[A-Za-z]*[0-9]*")
+    CONST_REGEX = re_compile(r"^[0-9a-e][a-zA-Z0-9]*|^[_]")
+    FUNC_REGEX = re_compile(r"^[f-t](\w*)")
+
+    # each parser will return the parsed element, tupled with
+    # the remainder of the parsing
+
+    def parse(self, string_to_parse: str) -> FormulaPrefix:
+        """Parses a string to its respective Formula/Term object,
+        tupled with its remainder which isn't derived by our logic's grammar.
+
+        Parameters:
+            string_to_parse: The string to parse.
+
+        Returns:
+            A tuple of Formula/Term object with its string remainder
+            if exists (None if not).
+        """
+        query = methodcaller("search", string_to_parse)
+        res = query(TermParser.VAR_REGEX) or query(TermParser.CONST_REGEX)
+
+        if res is not None:  # so you don't get attr error
+            return Term(res.group(0)), string_to_parse[res.end(0) :]
+        if TermParser.FUNC_REGEX.search(string_to_parse):
+            return self.parse_function(string_to_parse)
+
+        return None, string_to_parse  # type: ignore
+
+    def parse_function(self, string_to_parse: str) -> FormulaPrefix:
+        """ """
+        res = TermParser.FUNC_REGEX.search(string_to_parse)
+        assert res, "Expected a function"
+        assert string_to_parse[res.end(0)] == "(", "Expected open paren"
+        func_name: str = res.group(0)
+
+        left, left_remainder = self.parse(string_to_parse[res.end(0) + 1 :])
+        assert left, "At least one Term is required inside function."
+        assert left_remainder is not None, (
+            "Expected either a comma before another Term or end of function"
+            " denoted by a close-paren."
+        )
+
+        terms: List[Term] = [left]
+        while left_remainder.startswith(","):
+            left, left_remainder = self.parse(left_remainder[1:])
+            if left is None:
+                return None, string_to_parse
+            terms.append(left)
+        if left_remainder.startswith(")"):
+            return Term(func_name, terms), left_remainder[1:]
+
+        return None, string_to_parse  # type: ignore
 
 
 @frozen
@@ -176,6 +259,7 @@ class Term:
             that entire name (and not just a part of it, such as ``'x1'``).
         """
         # Task 7.3a
+        return TermParser().parse(string)
 
     @staticmethod
     def parse(string: str) -> Term:
@@ -422,8 +506,8 @@ class Formula:
         """
         # Task 7.2
         if is_equality(self.root):
-            assert len(self.arguments) == 2
-            return f"{str(self.arguments[0])}={str(self.arguments[1])}"
+            assert len(self.arguments) == 2  # type: ignore
+            return f"{str(self.arguments[0])}={str(self.arguments[1])}"  # type: ignore
         if is_unary(self.root):
             assert self.first
             return f"~{str(self.first)}"
