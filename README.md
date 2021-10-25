@@ -147,7 +147,7 @@ rules that includes *MP*, *I1*, *D*, and *N*, and may additionally include only 
         - <Variable> ::= a sequence of alphanumeric characters that begins with a letter in `u...z`. For example, `x`, `y12`, `zLast`.
         - <Constant> ::= a sequence of alphanumeric characters that begins with a digit or with a letter in `a`...`e`; or an underscore (with nothing before or after it). For example, ‘0’, ‘c1’, ‘7x’, or `_`.
         - <n-ary function ivocation> of the form `f(t_1, ..., t_n)`, where f is a function name denoted by a sequence of alphanumeric characters that begins with a letter in `f`, ..., `t`, where n >= 1, and where each t_i is itself a valid term. For example, `plus(x,y)`, `s(s(0))`, or `f(g(x),h(7,y),c)`.
-    - <Formula> ::= <Equality between 2 <Term>s> | <n-ary invocation of <R>> | ~<Formula> | <Formula><Bin><Formula> | <Q><Variable>[<Formula>]
+    - <Formula> ::= <Term>=<Term> | <n-ary invocation of <R>> | ~<Formula> | <Formula><Bin><Formula> | <Q><Variable>[<Formula>]
         - <R> ::= R is a relation name denoted by a string of alphanumeric characters that begins with a letter in `F`...`T`, where n ≥ 0 (note that we allow nullary relations), and where each t_i is a term. For example, `R(x,y)`, `Plus(s(0),x,s(x))`, or `Q()`.
         - <Bin> ::= A binary operation of the form `(φ*ψ)`, where `*` is one of the binary operators `|`, `&`, or `→`, and each of `φ` and `ψ` is a formula.
         - <Q> ::= Q is either the universal quantifier `∀` which we represent in Python as 'A' or the existential quantifier `∃` which we represent in Python as 'E'.
