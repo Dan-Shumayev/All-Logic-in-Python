@@ -179,13 +179,12 @@ class FormulaParser:
     """
 
     # Regexes and patterns to match the respective tokens
-    TERM_PATTERN = fr"{TermParser.VAR_REGEX.pattern}|{TermParser.FUNC_REGEX.pattern}|\
-        {TermParser.CONST_REGEX.pattern}"
+    TERM_PATTERN = fr"{TermParser.VAR_REGEX.pattern}|{TermParser.FUNC_REGEX.pattern}|{TermParser.CONST_REGEX.pattern}"
 
     RELATION_REGEX = re_compile(r"^[F-T]+[\w\d]*")
-    QUANT_REGEX = re_compile(fr"^[A|E]{TermParser.VAR_REGEX.pattern}")
+    QUANT_REGEX = re_compile(r"^[A|E]")
     TERM_REGEX = re_compile(TERM_PATTERN)
-    EQ_REGEX = re_compile(fr"[{TERM_PATTERN}]=[{TERM_PATTERN}]")
+    EQ_REGEX = re_compile(fr"{TERM_PATTERN}={TERM_PATTERN}")
 
     # each parser will return the parsed element, tupled with
     # the remainder of the parsing
@@ -206,26 +205,40 @@ class FormulaParser:
         if is_unary(string_to_parse[0]):
             formula, suffix = self.parse(string_to_parse[1:])
             return Formula("~", formula), suffix
-        if string_to_parse.startswith('('):
-            return self.parse_binary_formula(string_to_parse[1:-1])
+        if string_to_parse.startswith("("):
+            return self.parse_binary_formula(string_to_parse[1:])
         if FormulaParser.EQ_REGEX.search(string_to_parse):
             formula1, suffix1 = TermParser().parse(string_to_parse)
             formula2, suffix2 = TermParser().parse(suffix1[1:])
             return Formula("=", (formula1, formula2)), suffix2
-        # if FormulaParser.QUANT_REGEX.search(string_to_parse):
-        #     return self.parse_quantifier(string_to_parse)
+        if FormulaParser.QUANT_REGEX.search(string_to_parse):
+            return self.parse_quantifier(string_to_parse)
         # if FormulaParser.RELATION_REGEX.search(string_to_parse):
         #     return self.parse_relation(string_to_parse)
 
         return None, string_to_parse  # type: ignore
 
+    def parse_quantifier(self, string_to_parse: str):
+        """[A|E]<Var>[<Formula>] (where `A` and `E` indicate
+        the logical quantifiers `∀` and `∃` repectively)"""
+        assert is_quantifier(string_to_parse[0]) and len(string_to_parse) > 1
+        var, formula_string = TermParser().parse(string_to_parse[1:])
+
+        assert formula_string[0] == "["
+        formula, suffix = self.parse(formula_string[1:])
+        assert suffix[0] == "]"
+
+        return Formula(string_to_parse[0], str(var), formula), suffix[1:]
+
     def parse_binary_formula(self, string_to_parse: str):
+        """ """
         formula1, suffix1 = self.parse(string_to_parse)
         assert formula1 and suffix1
         assert is_binary(suffix1[0]), "Expected binary-op and a second formula."
 
         formula2, suffix2 = self.parse(suffix1[1:])
-        return Formula(suffix1[0], formula1, formula2), suffix2
+        return Formula(suffix1[0], formula1, formula2), suffix2[1:]
+
 
 @frozen
 class Term:
