@@ -178,14 +178,14 @@ class FormulaParser:
     |   the logical quantifiers `∀` and `∃` repectively)
     """
 
-    # Regexes to match the respective tokens
+    # Regexes and patterns to match the respective tokens
+    TERM_PATTERN = fr"{TermParser.VAR_REGEX.pattern}|{TermParser.FUNC_REGEX.pattern}|\
+        {TermParser.CONST_REGEX.pattern}"
+
     RELATION_REGEX = re_compile(r"^[F-T]+[\w\d]*")
     QUANT_REGEX = re_compile(fr"^[A|E]{TermParser.VAR_REGEX.pattern}")
-    EQ_REGEX = re_compile(
-        fr"[{TermParser.VAR_REGEX.pattern}|{TermParser.FUNC_REGEX.pattern}|\
-        {TermParser.CONST_REGEX.pattern}]=[{TermParser.VAR_REGEX.pattern}|\
-            {TermParser.FUNC_REGEX.pattern}|{TermParser.CONST_REGEX.pattern}]"
-    )
+    TERM_REGEX = re_compile(TERM_PATTERN)
+    EQ_REGEX = re_compile(fr"[{TERM_PATTERN}]=[{TERM_PATTERN}]")
 
     # each parser will return the parsed element, tupled with
     # the remainder of the parsing
@@ -206,6 +206,8 @@ class FormulaParser:
         if is_unary(string_to_parse[0]):
             formula, suffix = self.parse(string_to_parse[1:])
             return Formula("~", formula), suffix
+        if string_to_parse.startswith('('):
+            return self.parse_binary_formula(string_to_parse[1:-1])
         if FormulaParser.EQ_REGEX.search(string_to_parse):
             formula1, suffix1 = TermParser().parse(string_to_parse)
             formula2, suffix2 = TermParser().parse(suffix1[1:])
@@ -217,31 +219,13 @@ class FormulaParser:
 
         return None, string_to_parse  # type: ignore
 
-    # def parse_function(self, string_to_parse: str) -> FormulaPrefix:
-    #     """ """
-    #     res = TermParser.FUNC_REGEX.search(string_to_parse)
-    #     assert res, "Expected a function"
-    #     assert string_to_parse[res.end(0)] == "(", "Expected open paren"
-    #     func_name: str = res.group(0)
+    def parse_binary_formula(self, string_to_parse: str):
+        formula1, suffix1 = self.parse(string_to_parse)
+        assert formula1 and suffix1
+        assert is_binary(suffix1[0]), "Expected binary-op and a second formula."
 
-    #     left, left_remainder = self.parse(string_to_parse[res.end(0) + 1 :])
-    #     assert left, "At least one Term is required inside function."
-    #     assert left_remainder is not None, (
-    #         "Expected either a comma before another Term or end of function"
-    #         " denoted by a close-paren."
-    #     )
-
-    #     terms: List[Term] = [left]
-    #     while left_remainder.startswith(","):
-    #         left, left_remainder = self.parse(left_remainder[1:])
-    #         if left is None:
-    #             return None, string_to_parse
-    #         terms.append(left)
-    #     if left_remainder.startswith(")"):
-    #         return Term(func_name, terms), left_remainder[1:]
-
-    #     return None, string_to_parse  # type: ignore
-
+        formula2, suffix2 = self.parse(suffix1[1:])
+        return Formula(suffix1[0], formula1, formula2), suffix2
 
 @frozen
 class Term:
