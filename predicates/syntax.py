@@ -11,11 +11,22 @@ from __future__ import annotations
 from functools import lru_cache
 from operator import methodcaller
 from re import compile as re_compile
-from typing import (AbstractSet, List, Mapping, Optional, Sequence, Set, Tuple,
-                    Union)
+from typing import (
+    AbstractSet,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
-from logic_utils import (fresh_variable_name_generator, frozen,
-                         memoized_parameterless_method)
+from logic_utils import (
+    fresh_variable_name_generator,
+    frozen,
+    memoized_parameterless_method,
+)
 from propositions.syntax import Formula as PropositionalFormula
 from propositions.syntax import is_variable as is_propositional_variable
 
@@ -186,6 +197,8 @@ class FormulaParser:
     TERM_REGEX = re_compile(TERM_PATTERN)
     EQ_REGEX = re_compile(fr"{TERM_PATTERN}={TERM_PATTERN}")
 
+    BINARY_REGEX = re_compile(r"^->|^&|^\|")
+
     # each parser will return the parsed element, tupled with
     # the remainder of the parsing
 
@@ -213,14 +226,35 @@ class FormulaParser:
             return Formula("=", (formula1, formula2)), suffix2
         if FormulaParser.QUANT_REGEX.search(string_to_parse):
             return self.parse_quantifier(string_to_parse)
-        # if FormulaParser.RELATION_REGEX.search(string_to_parse):
-        #     return self.parse_relation(string_to_parse)
+        if FormulaParser.RELATION_REGEX.search(string_to_parse):
+            return self.parse_relation(string_to_parse)
 
         return None, string_to_parse  # type: ignore
 
-    def parse_quantifier(self, string_to_parse: str):
-        """[A|E]<Var>[<Formula>] (where `A` and `E` indicate
-        the logical quantifiers `∀` and `∃` repectively)"""
+    def parse_relation(self, string_to_parse: str) -> FormulaPrefix:
+        match = FormulaParser.RELATION_REGEX.search(string_to_parse)
+        assert match
+        assert string_to_parse[match.end(0)] == "("
+
+        if string_to_parse[match.end(0) + 1] == ")":
+            return (
+                Formula(match.group(0), []),
+                string_to_parse[match.end(0) + 2 :],
+            )
+
+        first_term, suffix = TermParser().parse(
+            string_to_parse[match.end(0) + 1 :]
+        )
+        terms: List[Term] = [first_term]
+        while suffix.startswith(","):
+            term, suffix = TermParser().parse(suffix[1:])
+            terms.append(term)
+        assert suffix.startswith(")")
+
+        return Formula(match.group(0), terms), suffix[1:]
+
+    def parse_quantifier(self, string_to_parse: str) -> FormulaPrefix:
+        """ """
         assert is_quantifier(string_to_parse[0]) and len(string_to_parse) > 1
         var, formula_string = TermParser().parse(string_to_parse[1:])
 
@@ -230,14 +264,15 @@ class FormulaParser:
 
         return Formula(string_to_parse[0], str(var), formula), suffix[1:]
 
-    def parse_binary_formula(self, string_to_parse: str):
+    def parse_binary_formula(self, string_to_parse: str) -> FormulaPrefix:
         """ """
         formula1, suffix1 = self.parse(string_to_parse)
         assert formula1 and suffix1
-        assert is_binary(suffix1[0]), "Expected binary-op and a second formula."
+        op = FormulaParser.BINARY_REGEX.search(suffix1)
+        assert op, "Expected binary-op and a second formula."
 
-        formula2, suffix2 = self.parse(suffix1[1:])
-        return Formula(suffix1[0], formula1, formula2), suffix2[1:]
+        formula2, suffix2 = self.parse(suffix1[op.end(0) :])
+        return Formula(op.group(0), formula1, formula2), suffix2[1:]
 
 
 @frozen
@@ -648,6 +683,7 @@ class Formula:
             A formula whose standard string representation is the given string.
         """
         # Task 7.4b
+        return Formula._parse_prefix(string)[0]
 
     def constants(self) -> Set[str]:
         """Finds all constant names in the current formula.
