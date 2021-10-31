@@ -381,12 +381,13 @@ class Term:
         return Term._parse_prefix(string)[0]
 
     def _dfs_iterator(self) -> Iterator[Term]:
-        """Iterates over Terms in DFS"""
+        """Iterates over ALL Terms in DFS"""
+        from itertools import chain as it_chain
+
+        yield self  # Function / Variable / Constant
         if is_function(self.root):
             for term in self.arguments:  # type: ignore
                 yield from term._dfs_iterator()
-        # Otherwise, it's a Var/Const
-        yield self
 
     def constants(self) -> Set[str]:
         """Finds all constant names in the current term.
@@ -419,6 +420,11 @@ class Term:
             all function names used in the current term.
         """
         # Task 7.5c
+        return {
+            (term.root, len(term.arguments))
+            for term in self._dfs_iterator()
+            if is_function(term.root)
+        }
 
     def substitute(
         self,
