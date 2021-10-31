@@ -136,24 +136,23 @@ rules that includes *MP*, *I1*, *D*, and *N*, and may additionally include only 
 #### The second half of the course deals with predicate logic (First-Order Logic):
 - All Math can be done using this logic.
 
-<summary><code>Chapter 5</code> - <b>Deductive proofs - continued</b></summary>
+<details>
+<summary><code>Chapter 7</code> - <b>Predicate Logic</b></summary>
 
+    - **Objetives of this chapter are:**
+        - Define syntax and semantics (Recursive-Descent Parser)
+        - Define Proofs
+        - Prove Gödel's completeness theorem
 
-
-- **Objetives of this chapter are:**
-    - Define syntax and semantics (Recursive-Descent Parser)
-    - Define Proofs
-    - Prove Gödel's completeness theorem
-
-- **Syntax:**
-    ```
-    - <Term> ::= <Variable> | <Constant> | <n-ary function ivocation>
-        - <Variable> ::= a sequence of alphanumeric characters that begins with a letter in `u...z`. For example, `x`, `y12`, `zLast`.
-        - <Constant> ::= a sequence of alphanumeric characters that begins with a digit or with a letter in `a`...`e`; or an underscore (with nothing before or after it). For example, ‘0’, ‘c1’, ‘7x’, or `_`.
-        - <n-ary function ivocation> of the form `f(t_1, ..., t_n)`, where f is a function name denoted by a sequence of alphanumeric characters that begins with a letter in `f`, ..., `t`, where n >= 1, and where each t_i is itself a valid term. For example, `plus(x,y)`, `s(s(0))`, or `f(g(x),h(7,y),c)`.
-    - <Formula> ::= <Term>=<Term> | <n-ary invocation of <R>> | ~<Formula> | <Formula><Bin><Formula> | <Q><Variable>[<Formula>]
-        - <R> ::= R is a relation name denoted by a string of alphanumeric characters that begins with a letter in `F`...`T`, where n ≥ 0 (note that we allow nullary relations), and where each t_i is a term. For example, `R(x,y)`, `Plus(s(0),x,s(x))`, or `Q()`.
-        - <Bin> ::= A binary operation of the form `(φ*ψ)`, where `*` is one of the binary operators `|`, `&`, or `→`, and each of `φ` and `ψ` is a formula.
-        - <Q> ::= Q is either the universal quantifier `∀` which we represent in Python as 'A' or the existential quantifier `∃` which we represent in Python as 'E'.
-    ```
+    - **Syntax:**
+        ```
+        - <Term> ::= <Variable> | <Constant> | <n-ary function ivocation>
+            - <Variable> ::= a sequence of alphanumeric characters that begins with a letter in `u...z`. For example, `x`, `y12`, `zLast`.
+            - <Constant> ::= a sequence of alphanumeric characters that begins with a digit or with a letter in `a`...`e`; or an underscore (with nothing before or after it). For example, ‘0’, ‘c1’, ‘7x’, or `_`.
+            - <n-ary function ivocation> of the form `f(t_1, ..., t_n)`, where f is a function name denoted by a sequence of alphanumeric characters that begins with a letter in `f`, ..., `t`, where n >= 1, and where each t_i is itself a valid term. For example, `plus(x,y)`, `s(s(0))`, or `f(g(x),h(7,y),c)`.
+        - <Formula> ::= <Term>=<Term> | <n-ary invocation of <R>> | ~<Formula> | <Formula><Bin><Formula> | <Q><Variable>[<Formula>]
+            - <R> ::= R is a relation name denoted by a string of alphanumeric characters that begins with a letter in `F`...`T`, where n ≥ 0 (note that we allow nullary relations), and where each t_i is a term. For example, `R(x,y)`, `Plus(s(0),x,s(x))`, or `Q()`.
+            - <Bin> ::= A binary operation of the form `(φ*ψ)`, where `*` is one of the binary operators `|`, `&`, or `→`, and each of `φ` and `ψ` is a formula.
+            - <Q> ::= Q is either the universal quantifier `∀` which we represent in Python as 'A' or the existential quantifier `∃` which we represent in Python as 'E'.
+        ```
 </details>
