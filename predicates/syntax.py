@@ -386,8 +386,9 @@ class Term:
 
         yield self  # Function / Variable / Constant
         if is_function(self.root):
-            for term in self.arguments:  # type: ignore
-                yield from term._dfs_iterator()
+            yield from it_chain.from_iterable(
+                term._dfs_iterator() for term in self.arguments  # type: ignore
+            )
 
     def constants(self) -> Set[str]:
         """Finds all constant names in the current term.

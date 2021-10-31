@@ -136,6 +136,10 @@ rules that includes *MP*, *I1*, *D*, and *N*, and may additionally include only 
 #### The second half of the course deals with predicate logic (First-Order Logic):
 - All Math can be done using this logic.
 
+<summary><code>Chapter 5</code> - <b>Deductive proofs - continued</b></summary>
+
+
+
 - **Objetives of this chapter are:**
     - Define syntax and semantics (Recursive-Descent Parser)
     - Define Proofs
@@ -152,3 +156,4 @@ rules that includes *MP*, *I1*, *D*, and *N*, and may additionally include only 
         - <Bin> ::= A binary operation of the form `(φ*ψ)`, where `*` is one of the binary operators `|`, `&`, or `→`, and each of `φ` and `ψ` is a formula.
         - <Q> ::= Q is either the universal quantifier `∀` which we represent in Python as 'A' or the existential quantifier `∃` which we represent in Python as 'E'.
     ```
+</details>
