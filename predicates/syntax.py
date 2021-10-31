@@ -406,6 +406,9 @@ class Term:
             A set of all variable names used in the current term.
         """
         # Task 7.5b
+        return {
+            term.root for term in self._dfs_iterator() if is_variable(term.root)
+        }
 
     def functions(self) -> Set[Tuple[str, int]]:
         """Finds all function names in the current term, along with their
