@@ -9,10 +9,11 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from operator import methodcaller
+from operator import attrgetter, methodcaller
 from re import compile as re_compile
 from typing import (
     AbstractSet,
+    Iterator,
     List,
     Mapping,
     Optional,
@@ -116,7 +117,7 @@ class TermParser:
 
     # Regexes to match the respective tokens
     VAR_REGEX = re_compile(r"[u-z]+[A-Za-z]*[0-9]*")
-    CONST_REGEX = re_compile(r"[0-9a-e][a-zA-Z0-9]*|^[_]")
+    CONST_REGEX = re_compile(r"[0-9a-e][a-zA-Z0-9]*|[_]")
     FUNC_REGEX = re_compile(r"[f-t](\w*)")
 
     # each parser will return the parsed element, tupled with
@@ -379,6 +380,14 @@ class Term:
         # Task 7.3b
         return Term._parse_prefix(string)[0]
 
+    def _dfs_iterator(self) -> Iterator[Term]:
+        """Iterates over Terms in DFS"""
+        if is_function(self.root):
+            for term in self.arguments:  # type: ignore
+                yield from term._dfs_iterator()
+        # Otherwise, it's a Var/Const
+        yield self
+
     def constants(self) -> Set[str]:
         """Finds all constant names in the current term.
 
@@ -386,6 +395,9 @@ class Term:
             A set of all constant names used in the current term.
         """
         # Task 7.5a
+        return {
+            term.root for term in self._dfs_iterator() if is_constant(term.root)
+        }
 
     def variables(self) -> Set[str]:
         """Finds all variable names in the current term.
