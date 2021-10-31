@@ -102,6 +102,7 @@ def is_function(string: str) -> bool:
     return string[0] >= "f" and string[0] <= "t" and string.isalnum()
 
 
+# TODO - consider changing the parsing to PyParsing / Recursive-Descent Parser
 class TermParser:
     """
     |   Recursive-Descent Parser for Terms represented by First-Order logic.
@@ -114,9 +115,9 @@ class TermParser:
     """
 
     # Regexes to match the respective tokens
-    VAR_REGEX = re_compile(r"^[u-z]+[A-Za-z]*[0-9]*")
-    CONST_REGEX = re_compile(r"^[0-9a-e][a-zA-Z0-9]*|^[_]")
-    FUNC_REGEX = re_compile(r"^[f-t](\w*)")
+    VAR_REGEX = re_compile(r"[u-z]+[A-Za-z]*[0-9]*")
+    CONST_REGEX = re_compile(r"[0-9a-e][a-zA-Z0-9]*|^[_]")
+    FUNC_REGEX = re_compile(r"[f-t](\w*)")
 
     # each parser will return the parsed element, tupled with
     # the remainder of the parsing
@@ -132,7 +133,7 @@ class TermParser:
             A tuple of Formula/Term object with its string remainder
             if exists (None if not).
         """
-        query = methodcaller("search", string_to_parse)
+        query = methodcaller("match", string_to_parse)
         match = query(TermParser.VAR_REGEX) or query(TermParser.CONST_REGEX)
 
         if match is not None:  # so you don't get attr error
@@ -192,12 +193,12 @@ class FormulaParser:
     # Regexes and patterns to match the respective tokens
     TERM_PATTERN = fr"{TermParser.VAR_REGEX.pattern}|{TermParser.FUNC_REGEX.pattern}|{TermParser.CONST_REGEX.pattern}"
 
-    RELATION_REGEX = re_compile(r"^[F-T]+[\w\d]*")
-    QUANT_REGEX = re_compile(r"^[A|E]")
+    RELATION_REGEX = re_compile(r"[F-T]+[\w\d]*")
+    QUANT_REGEX = re_compile(r"[A|E]")
     TERM_REGEX = re_compile(TERM_PATTERN)
     EQ_REGEX = re_compile(fr"{TERM_PATTERN}={TERM_PATTERN}")
 
-    BINARY_REGEX = re_compile(r"^->|^&|^\|")
+    BINARY_REGEX = re_compile(r"->|^&|^\|")
 
     # each parser will return the parsed element, tupled with
     # the remainder of the parsing
@@ -220,19 +221,19 @@ class FormulaParser:
             return Formula("~", formula), suffix
         if string_to_parse.startswith("("):
             return self.parse_binary_formula(string_to_parse[1:])
-        if FormulaParser.EQ_REGEX.search(string_to_parse):
+        if FormulaParser.EQ_REGEX.match(string_to_parse):
             formula1, suffix1 = TermParser().parse(string_to_parse)
             formula2, suffix2 = TermParser().parse(suffix1[1:])
             return Formula("=", (formula1, formula2)), suffix2
-        if FormulaParser.QUANT_REGEX.search(string_to_parse):
+        if FormulaParser.QUANT_REGEX.match(string_to_parse):
             return self.parse_quantifier(string_to_parse)
-        if FormulaParser.RELATION_REGEX.search(string_to_parse):
+        if FormulaParser.RELATION_REGEX.match(string_to_parse):
             return self.parse_relation(string_to_parse)
 
         return None, string_to_parse  # type: ignore
 
     def parse_relation(self, string_to_parse: str) -> FormulaPrefix:
-        match = FormulaParser.RELATION_REGEX.search(string_to_parse)
+        match = FormulaParser.RELATION_REGEX.match(string_to_parse)
         assert match
         assert string_to_parse[match.end(0)] == "("
 
@@ -268,7 +269,7 @@ class FormulaParser:
         """ """
         formula1, suffix1 = self.parse(string_to_parse)
         assert formula1 and suffix1
-        op = FormulaParser.BINARY_REGEX.search(suffix1)
+        op = FormulaParser.BINARY_REGEX.match(suffix1)
         assert op, "Expected binary-op and a second formula."
 
         formula2, suffix2 = self.parse(suffix1[op.end(0) :])
