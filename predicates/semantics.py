@@ -169,14 +169,13 @@ class Model(Generic[T]):
         # Task 7.7
 
         if is_variable(term.root):
-            assert term.root in assignment.keys()
             return assignment[term.root]
 
         if is_constant(term.root):
             return self.constant_interpretations[term.root]
 
         if is_function(term.root):
-            assert term.arguments and term.root in self.function_interpretations
+            assert term.arguments
 
             return self.function_interpretations[term.root].get(  # type: ignore
                 tuple(
