@@ -12,11 +12,23 @@ from functools import lru_cache
 from itertools import chain as it_chain
 from operator import attrgetter, methodcaller
 from re import compile as re_compile
-from typing import (AbstractSet, Iterator, List, Mapping, Optional, Sequence,
-                    Set, Tuple, Union)
+from typing import (
+    AbstractSet,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
-from logic_utils import (fresh_variable_name_generator, frozen,
-                         memoized_parameterless_method)
+from logic_utils import (
+    fresh_variable_name_generator,
+    frozen,
+    memoized_parameterless_method,
+)
 from propositions.syntax import Formula as PropositionalFormula
 from propositions.syntax import is_variable as is_propositional_variable
 
@@ -695,7 +707,7 @@ class Formula:
         # Task 7.4b
         return Formula._parse_prefix(string)[0]
 
-    # TODO - Refactor all Task 7.6's funcs - look at Kerbel's
+    # TODO - Refactor all Task 7.6's funcs (Yikes!) - look at Kerbel's
 
     def constants(self) -> Set[str]:
         """Finds all constant names in the current formula.

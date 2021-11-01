@@ -158,4 +158,11 @@ rules that includes *MP*, *I1*, *D*, and *N*, and may additionally include only 
 
 - *Free Variables* - A free occurrence of a variable in a formula is one where it is not within the binding scope of a quantifier (over this variable). For example:
     - `(∃x[Q(x,y)]&x=0)` - while the first occurrence of ‘x’ (not counting the one immediately next to the quantifier in `∃x`) is bound (and therefore not free), the second one is free, and so the free variable names — the variable names that have free occurrences—in this formula are nonetheless `x` and `y`.
+
+- **Semantics:**
+
+    - *Model* - A model in predicate logic consists of a set of elements `Ω` called the universe of the model, as well as an **interpretation** for a set of constant names, function names, and relation names. An **interpretation** of a constant name is an element in the universe `Ω`, an **interpretation** of an `n`-ary function name is a function `f`: `Ω`<sup>`n`</sup> → `Ω`, and an **interpretation** of an `n`-ary relation name is a subset of `Ω`<sup>n</sup>.
+        - **Note** - A model specifies no interpretation for variable names.
+    
+        - **Value of a Term in a Model** - The induced value of a term in a model .....
 </details>
