@@ -9,25 +9,14 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from itertools import chain as it_chain
 from operator import attrgetter, methodcaller
 from re import compile as re_compile
-from typing import (
-    AbstractSet,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import (AbstractSet, Iterator, List, Mapping, Optional, Sequence,
+                    Set, Tuple, Union)
 
-from logic_utils import (
-    fresh_variable_name_generator,
-    frozen,
-    memoized_parameterless_method,
-)
+from logic_utils import (fresh_variable_name_generator, frozen,
+                         memoized_parameterless_method)
 from propositions.syntax import Formula as PropositionalFormula
 from propositions.syntax import is_variable as is_propositional_variable
 
@@ -382,8 +371,6 @@ class Term:
 
     def _dfs_iterator(self) -> Iterator[Term]:
         """Iterates over ALL Terms in DFS"""
-        from itertools import chain as it_chain
-
         yield self  # Function / Variable / Constant
         if is_function(self.root):
             yield from it_chain.from_iterable(
@@ -708,6 +695,8 @@ class Formula:
         # Task 7.4b
         return Formula._parse_prefix(string)[0]
 
+    # TODO - Refactor all Task 7.6's funcs - look at Kerbel's
+
     def constants(self) -> Set[str]:
         """Finds all constant names in the current formula.
 
@@ -715,6 +704,26 @@ class Formula:
             A set of all constant names used in the current formula.
         """
         # Task 7.6a
+
+        if is_equality(self.root) or is_relation(self.root):
+            assert self.arguments
+            return set(
+                it_chain.from_iterable(
+                    arg.constants() for arg in self.arguments
+                )
+            )
+
+        if is_quantifier(self.root):
+            assert self.statement
+            return self.statement.constants()
+
+        if is_unary(self.root):
+            assert self.first
+            return self.first.constants()
+
+        if is_binary(self.root):
+            assert self.first and self.second
+            return self.first.constants() | self.second.constants()
 
     def variables(self) -> Set[str]:
         """Finds all variable names in the current formula.
@@ -724,6 +733,26 @@ class Formula:
         """
         # Task 7.6b
 
+        if is_equality(self.root) or is_relation(self.root):
+            assert self.arguments
+            return set(
+                it_chain.from_iterable(
+                    arg.variables() for arg in self.arguments
+                )
+            )
+
+        if is_quantifier(self.root):
+            assert self.statement and self.variable
+            return self.statement.variables() | {self.variable}
+
+        if is_unary(self.root):
+            assert self.first
+            return self.first.variables()
+
+        if is_binary(self.root):
+            assert self.first and self.second
+            return self.first.variables() | self.second.variables()
+
     def free_variables(self) -> Set[str]:
         """Finds all variable names that are free in the current formula.
 
@@ -732,6 +761,26 @@ class Formula:
             only within a scope of a quantification on that variable name.
         """
         # Task 7.6c
+
+        if is_equality(self.root) or is_relation(self.root):
+            assert self.arguments
+            return set(
+                it_chain.from_iterable(
+                    arg.variables() for arg in self.arguments
+                )
+            )
+
+        if is_quantifier(self.root):
+            assert self.statement
+            return self.statement.free_variables() - {self.variable}
+
+        if is_unary(self.root):
+            assert self.first
+            return self.first.free_variables()
+
+        if is_binary(self.root):
+            assert self.first and self.second
+            return self.first.free_variables() | self.second.free_variables()
 
     def functions(self) -> Set[Tuple[str, int]]:
         """Finds all function names in the current formula, along with their
@@ -743,6 +792,25 @@ class Formula:
         """
         # Task 7.6d
 
+        if is_equality(self.root) or is_relation(self.root):
+            return set(
+                it_chain.from_iterable(
+                    arg.functions() for arg in self.arguments
+                )
+            )
+
+        if is_quantifier(self.root):
+            assert self.statement
+            return self.statement.functions()
+
+        if is_unary(self.root):
+            assert self.first
+            return self.first.functions()
+
+        if is_binary(self.root):
+            assert self.first and self.second
+            return self.first.functions() | self.second.functions()
+
     def relations(self) -> Set[Tuple[str, int]]:
         """Finds all relation names in the current formula, along with their
         arities.
@@ -752,6 +820,24 @@ class Formula:
             all relation names used in the current formula.
         """
         # Task 7.6e
+
+        if is_equality(self.root):
+            return set()
+
+        if is_relation(self.root):
+            return {(self.root, len(self.arguments))}
+
+        if is_quantifier(self.root):
+            assert self.statement
+            return self.statement.relations()
+
+        if is_unary(self.root):
+            assert self.first
+            return self.first.relations()
+
+        if is_binary(self.root):
+            assert self.first and self.second
+            return self.first.relations() | self.second.relations()
 
     def substitute(
         self,
