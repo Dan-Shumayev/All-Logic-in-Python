@@ -6,6 +6,7 @@
 
 """Semantic analysis of predicate-logic expressions."""
 
+from itertools import product as it_product
 from typing import AbstractSet, FrozenSet, Generic, Mapping, Tuple, TypeVar
 
 from logic_utils import frozen, frozendict
@@ -236,8 +237,6 @@ class Model(Generic[T]):
             )
 
         if is_relation(formula.root):
-            assert formula.arguments
-
             return (
                 tuple(
                     self.evaluate_term(arg, assignment)
@@ -310,3 +309,19 @@ class Model(Generic[T]):
                     and self.relation_arities[relation] in {-1, arity}
                 )
         # Task 7.9
+
+        return all(
+            self.evaluate_formula(
+                formula,
+                dict(zip(assignment[::2], assignment[1::2]))
+                if len(assignment) >= 2
+                else frozendict(),
+            )
+            for formula in formulas
+            for assignment in it_product(
+                list(formula.free_variables()),
+                list(self.universe),
+                repeat=len(formula.free_variables()),
+            )
+            if len(set(assignment[0::2])) == len(assignment[0::2])
+        )
