@@ -281,7 +281,6 @@ class Model(Generic[T]):
                     for atom in list(self.universe)
                 )
 
-    # TODO - try Pythoning it
     def is_model_of(self, formulas: AbstractSet[Formula]) -> bool:
         """Checks if the current model is a model of the given formulas.
 
@@ -314,15 +313,14 @@ class Model(Generic[T]):
         return all(
             self.evaluate_formula(
                 formula,
-                dict(zip(assignment[::2], assignment[1::2]))
-                if len(assignment) >= 2
-                else frozendict(),
+                assignment,
             )
             for formula in formulas
-            for assignment in it_product(
-                list(formula.free_variables()),
-                list(self.universe),
-                repeat=len(formula.free_variables()),
-            )
-            if len(set(assignment[0::2])) == len(assignment[0::2])
+            for assignment in [
+                dict(zip(formula.free_variables(), tupl))
+                for tupl in it_product(
+                    self.universe,
+                    repeat=len(formula.free_variables()),
+                )
+            ]
         )
