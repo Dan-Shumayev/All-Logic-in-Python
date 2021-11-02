@@ -707,7 +707,7 @@ class Formula:
         # Task 7.4b
         return Formula._parse_prefix(string)[0]
 
-    # TODO - Refactor all Task 7.6's funcs (Yikes!) - look at Kerbel's
+    # TODO - Refactor all Task 7.6's funcs (Yikes!)
 
     def constants(self) -> Set[str]:
         """Finds all constant names in the current formula.
