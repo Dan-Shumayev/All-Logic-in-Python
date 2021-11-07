@@ -183,7 +183,7 @@ class InferenceRule:
         return {**specialization_map1, **specialization_map2}
 
     @staticmethod
-    def formula_specialization_map(
+    def _formula_specialization_map(
         general: Formula, specialization: Formula
     ) -> Optional[SpecializationMap]:
         """Computes the minimal specialization map by which the given formula
@@ -203,15 +203,15 @@ class InferenceRule:
             if general.root == specialization.root:
                 if is_binary(general.root):
                     return InferenceRule._merge_specialization_maps(
-                        InferenceRule.formula_specialization_map(
+                        InferenceRule._formula_specialization_map(
                             general.first, specialization.first  # type: ignore
                         ),
-                        InferenceRule.formula_specialization_map(
+                        InferenceRule._formula_specialization_map(
                             general.second, specialization.second  # type: ignore
                         ),
                     )
                 if is_unary(general.root):
-                    return InferenceRule.formula_specialization_map(
+                    return InferenceRule._formula_specialization_map(
                         general.first, specialization.first  # type: ignore
                     )
                 return {}  # T -> T / F -> F is redundant
@@ -247,7 +247,7 @@ class InferenceRule:
         ):
             specialization_map = InferenceRule._merge_specialization_maps(
                 specialization_map,
-                InferenceRule.formula_specialization_map(grule, srule),
+                InferenceRule._formula_specialization_map(grule, srule),
             )
 
         return specialization_map if specialization_map else None

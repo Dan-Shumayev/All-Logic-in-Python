@@ -200,7 +200,7 @@ def test_formula_specialization_map(debug=False):
         d = None if t[2] == None else {k: Formula.parse(t[2][k]) for k in t[2]}
         if debug:
             print("Checking if and how formula", s, "is a special case of", g)
-        dd = InferenceRule.formula_specialization_map(g, s)
+        dd = InferenceRule._formula_specialization_map(g, s)
         if dd != None:
             for k in dd:
                 assert is_variable(k)
