@@ -21,7 +21,6 @@ from typing import (
 )
 
 from logic_utils import frozen, memoized_parameterless_method
-from typing_extensions import Concatenate
 
 from propositions.syntax import *
 
