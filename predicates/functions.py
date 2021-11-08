@@ -72,17 +72,16 @@ def replace_functions_with_relations_in_model(model: Model[T]) -> Model[T]:
         )
     # Task 8.1
 
-    new_relations: RelationType = model.relation_interpretations
+    new_relations: RelationInter = model.relation_interpretations
 
     for func_name, func_inter in model.function_interpretations.items():
         new_relations = {
             **new_relations,
-            function_name_to_relation_name(func_name): set(
-                map(
-                    lambda mapping: (mapping[1],) + mapping[0],
-                    func_inter.items(),
-                )
-            ),
+            **{
+                function_name_to_relation_name(func_name): {
+                    (v, *k) for k, v in func_inter.items()
+                }
+            },
         }
 
     return Model(
@@ -120,6 +119,74 @@ def replace_relations_with_functions_in_model(
             in model.relation_interpretations
         )
     # Task 8.2
+
+    def isThereFunctionWithoutRelation() -> bool:
+        return any(
+            function_name_to_relation_name(func_name)
+            not in model.relation_interpretations.keys()
+            for func_name in original_functions
+        )
+
+    def isIllegalRelationsToFunctions() -> bool:
+        # from itertools import it_product
+        res, args = [], []
+
+        for func_name in original_functions:
+            relation: RelationType = model.relation_interpretations[
+                function_name_to_relation_name(func_name)
+            ]
+            res += list(tupl[0] for tupl in relation)
+            args.extend(tupl[1:] for tupl in relation)
+            all_possible_args = list(
+                it_product(
+                    model.universe,
+                    repeat=model.relation_arities[
+                        function_name_to_relation_name(func_name)
+                    ]
+                    - 1,
+                )
+            )
+            if (
+                not set(res).issubset(model.universe)
+                or len(args) != len(all_possible_args)
+                or set(args) != set(all_possible_args)
+            ):
+                return True
+            res, args = [], []
+
+        return False
+
+    if isThereFunctionWithoutRelation() or isIllegalRelationsToFunctions():
+        return None
+
+    new_functions: FunctionInter = {
+        func_name: {} for func_name in original_functions
+    }
+
+    for func_name in original_functions:
+        for tupl in model.relation_interpretations[
+            function_name_to_relation_name(func_name)
+        ]:
+            args = tupl[1:]
+            res = tupl[0]
+            new_functions[func_name] |= {args: res}
+
+    relations: Set[str] = model.relation_interpretations.keys() - set(
+        map(
+            lambda func_name: function_name_to_relation_name(func_name),
+            new_functions.keys(),
+        )
+    )
+    remained_relations: RelationInter = {
+        rel: model.relation_interpretations[rel] for rel in relations
+    }
+
+    return Model(
+        model.universe,
+        model.constant_interpretations,
+        remained_relations,
+        new_functions,
+    )
 
 
 def _compile_term(term: Term) -> List[Formula]:

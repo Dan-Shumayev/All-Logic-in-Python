@@ -15,7 +15,9 @@ from predicates.syntax import *
 
 #: A generic type for a universe element in a model.
 T = TypeVar("T")
-RelationType = Mapping[str, AbstractSet[Tuple[T, ...]]]
+RelationInter = Mapping[str, AbstractSet[Tuple[T, ...]]]
+RelationType = AbstractSet[Tuple[T, ...]]
+FunctionInter = Mapping[str, Mapping[Tuple[T, ...], T]]
 
 
 @frozen
