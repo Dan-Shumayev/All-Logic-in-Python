@@ -8,6 +8,7 @@
 equality."""
 
 from collections import defaultdict
+from re import match as re_match
 from typing import AbstractSet, Dict, List, Set
 
 from logic_utils import fresh_variable_name_generator
@@ -177,13 +178,14 @@ def replace_relations_with_functions_in_model(
 
     replaced_relations_as_functions: FunctionInterpretation = defaultdict(dict)
 
-    for func_name in function_names_to_relation_names.keys():
-        for tupl in model.relation_interpretations[
-            function_names_to_relation_names[func_name]
-        ]:
-            args: Tuple[T, ...] = tupl[1:]
-            val: T = tupl[0]
-            replaced_relations_as_functions[func_name].update({args: val})
+    for func_name, func_as_rel in function_names_to_relation_names.items():
+        replaced_relations_as_functions[func_name] = {
+            tupl[1:]: tupl[
+                0
+            ]  # We assume the relations always have at least one arg, because it's
+            # required for functions
+            for tupl in model.relation_interpretations[func_as_rel]
+        }
 
     left_relations: RelationInterpretation = dict(
         filter(
@@ -222,10 +224,45 @@ def _compile_term(term: Term) -> List[Formula]:
         last returned step evaluates in that model to the value of the given
         term.
     """
-    assert is_function(term.root)
+    assert is_function(term.root) and term.arguments
     for variable in term.variables():
         assert variable[0] != "z"
     # Task 8.3
+
+    former_compiled_args: List[Formula] = []
+    compiled_args: List[Formula] = []
+
+    for arg in term.arguments:
+        if is_function(arg.root):
+            curr_compiled_arg: List[Formula] = _compile_term(arg)
+            former_compiled_args += curr_compiled_arg
+
+            compiled_args.append(curr_compiled_arg[-1])  # Only this term's arg
+
+    steps_gen: Iterator[Formula] = (
+        compiled_args for compiled_args in compiled_args
+    )
+    match_till_equal_sign: str = "[^=]*"
+
+    return former_compiled_args + [
+        Formula(
+            "=",
+            (
+                next(fresh_variable_name_generator),
+                Term(
+                    term.root,
+                    tuple(
+                        arg
+                        if not is_function(arg.root)
+                        else re_match(
+                            match_till_equal_sign, str(next(steps_gen))
+                        ).group(0)
+                        for arg in term.arguments
+                    ),
+                ),
+            ),
+        )
+    ]
 
 
 def replace_functions_with_relations_in_formula(formula: Formula) -> Formula:
