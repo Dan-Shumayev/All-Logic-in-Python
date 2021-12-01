@@ -272,7 +272,8 @@ class Model(Generic[T]):
             if formula.root == "A":
                 return all(
                     self.evaluate_formula(
-                        formula.statement, assignment | {formula.variable: atom}
+                        formula.statement,
+                        {**assignment, formula.variable: atom},
                     )
                     for atom in list(self.universe)
                 )
@@ -280,7 +281,8 @@ class Model(Generic[T]):
             if formula.root == "E":
                 return any(
                     self.evaluate_formula(
-                        formula.statement, assignment | {formula.variable: atom}
+                        formula.statement,
+                        {**assignment, formula.variable: atom},
                     )
                     for atom in list(self.universe)
                 )
