@@ -8,8 +8,8 @@
 equality."""
 
 from collections import defaultdict
-from re import match as re_match
-from typing import AbstractSet, Dict, List, Set
+from re import compile as re_compile
+from typing import AbstractSet, Dict, List, Pattern, Set
 
 from logic_utils import fresh_variable_name_generator
 
@@ -240,23 +240,25 @@ def _compile_term(term: Term) -> List[Formula]:
             compiled_args.append(curr_compiled_arg[-1])  # Only this term's arg
 
     steps_gen: Iterator[Formula] = (
-        compiled_args for compiled_args in compiled_args
+        compiled_arg for compiled_arg in compiled_args
     )
-    match_till_equal_sign: str = "[^=]*"
+    match_till_equal_sign: Pattern[str] = re_compile("[^=]*")
 
     return former_compiled_args + [
         Formula(
             "=",
             (
-                next(fresh_variable_name_generator),
+                Term(next(fresh_variable_name_generator)),
                 Term(
                     term.root,
                     tuple(
                         arg
                         if not is_function(arg.root)
-                        else re_match(
-                            match_till_equal_sign, str(next(steps_gen))
-                        ).group(0)
+                        else Term(
+                            match_till_equal_sign.match(
+                                str(next(steps_gen))
+                            ).group(0)
+                        )
                         for arg in term.arguments
                     ),
                 ),
@@ -296,6 +298,73 @@ def replace_functions_with_relations_in_formula(formula: Formula) -> Formula:
     for variable in formula.variables():
         assert variable[0] != "z"
     # Task 8.4
+
+    if is_relation(formula.root) or is_equality(formula.root):
+        compiled_terms: List[Formula] = []
+        rel_or_eq_new_args: List[Term] = []
+
+        for arg in formula.arguments:
+            if is_function(arg.root):
+                compiled_terms.extend(_compile_term(arg))
+                rel_or_eq_new_args.append(compiled_terms[-1].arguments[0])
+            else:
+                rel_or_eq_new_args.append(arg)
+
+        return compiled_terms_to_conjuctive_relations(
+            compiled_terms, formula.root, rel_or_eq_new_args
+        )
+    else:  # Var/Constant / Unary / Binary / Quantification
+        first: Formula
+        second: Formula
+
+        if is_constant(formula.root) or is_variable(formula.root):
+            return formula
+        elif is_unary(formula.root):
+            first = replace_functions_with_relations_in_formula(formula.first)
+        elif is_binary(formula.root):
+            first = replace_functions_with_relations_in_formula(formula.first)
+            second = replace_functions_with_relations_in_formula(formula.second)
+        else:  # Quantification
+            first = formula.variable
+            second = replace_functions_with_relations_in_formula(
+                formula.statement
+            )
+
+        return Formula(formula.root, first, second)
+
+
+def compiled_terms_to_conjuctive_relations(
+    compiled_terms: List[Formula],
+    rel_name_or_equality: str,
+    rel_or_eq_args: List[Term],
+) -> Formula:
+    if not compiled_terms:
+        return Formula(
+            rel_name_or_equality,
+            rel_or_eq_args,
+        )
+
+    curr_compiled_term: Formula = compiled_terms[0]
+    term_value: Term = curr_compiled_term.arguments[0]
+    compiled_term_associated_func: Term = curr_compiled_term.arguments[1]
+
+    return Formula(
+        "E",
+        term_value.root,
+        Formula(
+            "&",
+            Formula(
+                compiled_term_associated_func.root.upper(),
+                (
+                    term_value,
+                    *compiled_term_associated_func.arguments,
+                ),
+            ),
+            compiled_terms_to_conjuctive_relations(
+                compiled_terms[1:], rel_name_or_equality, rel_or_eq_args
+            ),
+        ),
+    )
 
 
 def replace_functions_with_relations_in_formulas(
