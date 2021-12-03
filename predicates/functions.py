@@ -566,7 +566,7 @@ def replace_equality_with_SAME_in_formulas(
                 )
             )
 
-    return {form for form in equality_to_SAME}
+    return {free_equality_formula for free_equality_formula in equality_to_SAME}
 
 
 # TODO - Yikes!!! Make it Pythonic!
@@ -579,13 +579,10 @@ def equality_meaning_in_relation(rel_name: str, arity: int) -> Formula:
     for arg in xs + ys:
         formula_as_string += "A" + arg + "["
 
-    formula_as_string += "(" * arity
-
     SAMES: List[str] = list()
     for x, y in zip(xs, ys):
         SAMES.append(f"SAME({x},{y})")
-
-    formula_as_string += "&".join(SAMES) + ")" * (arity - 1) + "->("
+    formula_as_string += "(" + SAME_conjuction(SAMES) + "->("
 
     R1_implies: str = fr"{rel_name}({','.join(xs)})->"
     R2: str = fr"{rel_name}({','.join(ys)})))"
@@ -593,6 +590,13 @@ def equality_meaning_in_relation(rel_name: str, arity: int) -> Formula:
     formula_as_string += R1_implies + R2 + "]" * arity * 2
 
     return Formula.parse(formula_as_string)
+
+
+def SAME_conjuction(SAME_relations: List[str]) -> str:
+    if len(SAME_relations) == 1:
+        return SAME_relations[0]
+
+    return f"({SAME_relations[0]}&{SAME_conjuction(SAME_relations[1:])})"
 
 
 def syntactic_equality_to_SAME_relation(
