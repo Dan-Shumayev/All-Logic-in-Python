@@ -8,6 +8,7 @@
 equality."""
 
 from collections import defaultdict
+from functools import reduce
 from re import compile as re_compile
 from typing import AbstractSet, Dict, List, Pattern, Set
 
@@ -254,7 +255,7 @@ def _compile_term(term: Term) -> List[Formula]:
                     tuple(
                         arg
                         if not is_function(arg.root)
-                        else Term(
+                        else Term(  # z1=... -> z1 ; x12 -> x12
                             match_till_equal_sign.match(
                                 str(next(steps_gen))
                             ).group(0)
@@ -288,10 +289,8 @@ def replace_functions_with_relations_in_formula(formula: Formula) -> Formula:
         len(
             {
                 function_name_to_relation_name(function)
-                for function, arity in formula.functions()
-            }.intersection(
-                {relation for relation, arity in formula.relations()}
-            )
+                for function, _ in formula.functions()
+            }.intersection({relation for relation, _ in formula.relations()})
         )
         == 0
     )
@@ -346,24 +345,30 @@ def compiled_terms_to_conjuctive_relations(
 
     curr_compiled_term: Formula = compiled_terms[0]
     term_value: Term = curr_compiled_term.arguments[0]
-    compiled_term_associated_func: Term = curr_compiled_term.arguments[1]
 
     return Formula(
         "E",
         term_value.root,
         Formula(
             "&",
-            Formula(
-                compiled_term_associated_func.root.upper(),
-                (
-                    term_value,
-                    *compiled_term_associated_func.arguments,
-                ),
-            ),
+            compiled_term_to_relation(compiled_terms[0]),
             compiled_terms_to_conjuctive_relations(
                 compiled_terms[1:], rel_name_or_equality, rel_or_eq_args
             ),
         ),
+    )
+
+
+def compiled_term_to_relation(compiled_term: Formula) -> Formula:
+    assert compiled_term
+
+    curr_compiled_term: Formula = compiled_term
+    term_value: Term = curr_compiled_term.arguments[0]
+    compiled_term_associated_func: Term = curr_compiled_term.arguments[1]
+
+    return Formula(
+        compiled_term_associated_func.root.upper(),
+        (term_value, *compiled_term_associated_func.arguments),
     )
 
 
@@ -405,14 +410,14 @@ def replace_functions_with_relations_in_formulas(
                 *[
                     {
                         function_name_to_relation_name(function)
-                        for function, arity in formula.functions()
+                        for function, _ in formula.functions()
                     }
                     for formula in formulas
                 ]
             ).intersection(
                 set.union(
                     *[
-                        {relation for relation, arity in formula.relations()}
+                        {relation for relation, _ in formula.relations()}
                         for formula in formulas
                     ]
                 )
@@ -424,6 +429,82 @@ def replace_functions_with_relations_in_formulas(
         for variable in formula.variables():
             assert variable[0] != "z"
     # Task 8.5
+
+    free_func_formulas: Set[Formula] = reduce(
+        lambda s1, s2: s1.union(s2),
+        list(
+            {replace_functions_with_relations_in_formula(formula)}
+            for formula in formulas
+        ),
+    )
+
+    omitted_funcs: List[Tuple[str, int]] = list(
+        reduce(
+            lambda s1, s2: s1.union(s2),
+            (formula.functions() for formula in formulas),
+        )
+    )
+
+    for omitted_func in omitted_funcs:
+        free_func_formulas.add(
+            func_to_functionalized_relation(
+                omitted_func[0].upper(), omitted_func[1]
+            )
+        )
+
+    return free_func_formulas
+
+
+def func_to_functionalized_relation(
+    func_to_rel_name: str, arity: int
+) -> Formula:
+    return Formula(
+        "&",
+        domain_to_codomain(func_to_rel_name, arity),
+        domain_to_unique_codomain(func_to_rel_name, arity),
+    )
+
+
+def domain_to_codomain(func_to_rel_name: str, arity: int) -> Formula:
+    if arity == 1:
+        arg: str = next(fresh_variable_name_generator)
+        val: str = next(fresh_variable_name_generator)
+
+        return Formula(
+            "A",
+            arg,
+            Formula(
+                "E", val, Formula(func_to_rel_name, [Term(val), Term(arg)])
+            ),
+        )
+
+    return Formula(
+        "A",
+        next(fresh_variable_name_generator),
+        func_to_functionalized_relation(func_to_rel_name, arity - 1),
+    )
+
+
+def domain_to_unique_codomain(func_to_rel_name: str, arity: int) -> Formula:
+    first_val: Term = Term(next(fresh_variable_name_generator))
+    second_val: Term = Term(next(fresh_variable_name_generator))
+
+    args: List[Term] = [
+        Term(next(fresh_variable_name_generator)) for _ in range(arity)
+    ]
+
+    first_rel: Formula = Formula(func_to_rel_name, [first_val, *args])
+    second_rel: Formula = Formula(func_to_rel_name, [second_val, *args])
+
+    return Formula(
+        "->",
+        Formula(
+            "A",
+            first_val.root,
+            Formula("A", second_val.root, Formula("&", first_rel, second_rel)),
+        ),
+        Formula("=", [first_val, second_val]),
+    )
 
 
 def replace_equality_with_SAME_in_formulas(
@@ -452,9 +533,7 @@ def replace_equality_with_SAME_in_formulas(
     """
     for formula in formulas:
         assert len(formula.functions()) == 0
-        assert "SAME" not in {
-            relation for relation, arity in formula.relations()
-        }
+        assert "SAME" not in {relation for relation, _ in formula.relations()}
     # Task 8.6
 
 
