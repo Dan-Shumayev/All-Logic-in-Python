@@ -536,6 +536,92 @@ def replace_equality_with_SAME_in_formulas(
         assert "SAME" not in {relation for relation, _ in formula.relations()}
     # Task 8.6
 
+    equality_to_SAME: List[Formula] = list()
+
+    SAME_reflexive: Formula = Formula.parse("Ax[SAME(x,x)]")
+    SAME_symmetric: Formula = Formula.parse("Ax[Ay[(SAME(x,y)->SAME(y,x))]]")
+    SAME_transitive: Formula = Formula.parse(
+        "Ax[Ay[Az[((SAME(x,y)&SAME(y,z))->SAME(x,z))]]]"
+    )
+
+    equality_to_SAME.extend(
+        [
+            SAME_reflexive,
+            SAME_symmetric,
+            SAME_transitive,
+            *(
+                syntactic_equality_to_SAME_relation(formula)
+                for formula in formulas
+            ),
+        ]
+    )
+
+    for formula in formulas:
+        for relation in formula.relations():
+            equality_to_SAME.append(
+                (
+                    equality_meaning_in_relation(relation[0], relation[1])
+                    if relation[1] > 0
+                    else Formula(relation[0], [])
+                )
+            )
+
+    return {form for form in equality_to_SAME}
+
+
+# TODO - Yikes!!! Make it Pythonic!
+def equality_meaning_in_relation(rel_name: str, arity: int) -> Formula:
+    xs: List[str] = [next(fresh_variable_name_generator) for _ in range(arity)]
+    ys: List[str] = [next(fresh_variable_name_generator) for _ in range(arity)]
+
+    formula_as_string: str = str()
+
+    for arg in xs + ys:
+        formula_as_string += "A" + arg + "["
+
+    formula_as_string += "(" * arity
+
+    SAMES: List[str] = list()
+    for x, y in zip(xs, ys):
+        SAMES.append(f"SAME({x},{y})")
+
+    formula_as_string += "&".join(SAMES) + ")" * (arity - 1) + "->("
+
+    R1_implies: str = fr"{rel_name}({','.join(xs)})->"
+    R2: str = fr"{rel_name}({','.join(ys)})))"
+
+    formula_as_string += R1_implies + R2 + "]" * arity * 2
+
+    return Formula.parse(formula_as_string)
+
+
+def syntactic_equality_to_SAME_relation(
+    formula: Formula,
+) -> Formula:
+    if is_equality(formula.root):
+        return Formula("SAME", formula.arguments)
+
+    if is_quantifier(formula.root):
+        return Formula(
+            formula.root,
+            formula.variable,
+            syntactic_equality_to_SAME_relation(formula.statement),
+        )
+
+    if is_unary(formula.root):
+        return Formula(
+            formula.root, syntactic_equality_to_SAME_relation(formula.first)
+        )
+
+    if is_binary(formula.root):
+        return Formula(
+            formula.root,
+            syntactic_equality_to_SAME_relation(formula.first),
+            syntactic_equality_to_SAME_relation(formula.second),
+        )
+
+    return formula  # Constant / Var / Relation
+
 
 def add_SAME_as_equality_in_model(model: Model[T]) -> Model[T]:
     """Adds an interpretation of the relation name ``'SAME'`` in the given
