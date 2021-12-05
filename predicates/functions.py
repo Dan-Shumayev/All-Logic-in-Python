@@ -681,3 +681,53 @@ def make_equality_as_SAME_in_model(model: Model[T]) -> Model[T]:
     )
     assert len(model.function_interpretations) == 0
     # Task 8.8
+
+    equivalent_classes: List[Set[T]] = []
+
+    def eq_class_of_val(val: T) -> Optional[Set[T]]:
+        return next((cl for cl in equivalent_classes if val in cl), None)
+
+    def get_repr(el: T) -> T:
+        if el in eq_representatives.keys():  # is representative
+            return el
+
+        return next(
+            repr
+            for repr in eq_representatives.keys()
+            if el in eq_representatives[repr]
+        )
+
+    for l_val, r_val in model.relation_interpretations["SAME"]:
+        l_cl: Optional[Set[T]] = eq_class_of_val(l_val)
+        r_cl: Optional[Set[T]] = eq_class_of_val(r_val)
+
+        if l_cl is not None and r_cl is not None and l_cl is not r_cl:
+            l_cl.update(r_cl)  # type: ignore
+            equivalent_classes.remove(r_cl)  # type: ignore
+        elif l_cl is not None:
+            l_cl.add(r_val)
+        else:
+            equivalent_classes.append({l_val, r_val})
+
+    eq_representatives: Dict[T, Set[T]] = {
+        cl.pop(): cl for cl in equivalent_classes
+    }
+    new_universe: Set[T] = {repr for repr in eq_representatives.keys()}
+
+    new_constants: Dict[str, T] = {
+        const: get_repr(el)
+        for const, el in model.constant_interpretations.items()
+    }
+
+    new_relations: Dict[str, AbstractSet[Tuple[T, ...]]] = {
+        rel: {tup for tup in rel_tupls if set(tup) <= new_universe}
+        for rel, rel_tupls in model.relation_interpretations.items()
+        if rel != "SAME"
+    }
+
+    return Model(
+        new_universe,
+        new_constants,
+        new_relations,
+        model.function_interpretations,
+    )
