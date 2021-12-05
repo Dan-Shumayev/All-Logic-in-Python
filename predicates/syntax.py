@@ -13,23 +13,11 @@ from functools import reduce as ft_reduce
 from itertools import chain as it_chain
 from operator import attrgetter, methodcaller
 from re import compile as re_compile
-from typing import (
-    AbstractSet,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import (AbstractSet, Iterator, List, Mapping, Optional, Sequence,
+                    Set, Tuple, Union)
 
-from logic_utils import (
-    fresh_variable_name_generator,
-    frozen,
-    memoized_parameterless_method,
-)
+from logic_utils import (fresh_variable_name_generator, frozen,
+                         memoized_parameterless_method)
 from propositions.syntax import Formula as PropositionalFormula
 from propositions.syntax import is_variable as is_propositional_variable
 
@@ -427,6 +415,14 @@ class Term:
             if is_function(term.root)
         }
 
+    @staticmethod
+    def is_term(formula_root: str) -> bool:
+        return (
+            is_function(formula_root)
+            or is_constant(formula_root)
+            or is_variable(formula_root)
+        )
+
     def substitute(
         self,
         substitution_map: Mapping[str, Term],
@@ -500,14 +496,15 @@ class Term:
     def _raise_excp_upon_forbid_var(
         substitution_map, forbidden_variables, ft_reduce
     ):
-        all_variables: Set[str] = ft_reduce(
-            lambda vars1, vars2: vars1 | vars2,
-            [term.variables() for term in substitution_map.values()],
-        )
+        if substitution_map:
+            all_variables: Set[str] = ft_reduce(
+                lambda vars1, vars2: vars1 | vars2,
+                [term.variables() for term in substitution_map.values()],
+            )
 
-        for var in forbidden_variables:
-            if var in all_variables:
-                raise ForbiddenVariableError(var)
+            for var in forbidden_variables:
+                if var in all_variables:
+                    raise ForbiddenVariableError(var)
 
 
 @lru_cache(maxsize=100)  # Cache the return value of is_equality
@@ -941,6 +938,42 @@ class Formula:
         for variable in forbidden_variables:
             assert is_variable(variable)
         # Task 9.2
+
+        if Term.is_term(self.root):
+            return self.substitute(substitution_map, forbidden_variables)
+
+        if is_equality(self.root) or is_relation(self.root):
+            args: List[Term] = [
+                arg.substitute(substitution_map, forbidden_variables)
+                for arg in self.arguments
+            ]
+
+            return Formula(self.root, args)
+
+        if is_unary(self.root):
+            return Formula(
+                self.root,
+                self.substitute(substitution_map, forbidden_variables),
+            )
+
+        if is_binary(self.root):
+            assert self.first and self.second
+
+            return Formula(
+                self.root,
+                self.first.substitute(substitution_map, forbidden_variables),
+                self.second.substitute(substitution_map, forbidden_variables),
+            )
+
+        if is_quantifier(self.root):
+            substitution_map.pop(self.variable) if substitution_map.get(self.variable) else None
+            return Formula(
+                self.root,
+                self.variable,
+                self.statement.substitute(
+                    substitution_map, forbidden_variables | {self.variable}
+                ),
+            )
 
     def propositional_skeleton(
         self,
