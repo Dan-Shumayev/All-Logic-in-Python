@@ -13,11 +13,23 @@ from functools import reduce as ft_reduce
 from itertools import chain as it_chain
 from operator import attrgetter, methodcaller
 from re import compile as re_compile
-from typing import (AbstractSet, Iterator, List, Mapping, Optional, Sequence,
-                    Set, Tuple, Union)
+from typing import (
+    AbstractSet,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
-from logic_utils import (fresh_variable_name_generator, frozen,
-                         memoized_parameterless_method)
+from logic_utils import (
+    fresh_variable_name_generator,
+    frozen,
+    memoized_parameterless_method,
+)
 from propositions.syntax import Formula as PropositionalFormula
 from propositions.syntax import is_variable as is_propositional_variable
 
@@ -939,9 +951,6 @@ class Formula:
             assert is_variable(variable)
         # Task 9.2
 
-        if Term.is_term(self.root):
-            return self.substitute(substitution_map, forbidden_variables)
-
         if is_equality(self.root) or is_relation(self.root):
             args: List[Term] = [
                 arg.substitute(substitution_map, forbidden_variables)
@@ -966,14 +975,20 @@ class Formula:
             )
 
         if is_quantifier(self.root):
-            substitution_map.pop(self.variable) if substitution_map.get(self.variable) else None
+            assert self.variable and self.statement
+
             return Formula(
                 self.root,
                 self.variable,
                 self.statement.substitute(
-                    substitution_map, forbidden_variables | {self.variable}
+                    substitution_map.pop(self.variable, None)
+                    and substitution_map
+                    or substitution_map,
+                    set(forbidden_variables).union(self.variable),
                 ),
             )
+
+        return self.substitute(substitution_map, forbidden_variables)
 
     def propositional_skeleton(
         self,
