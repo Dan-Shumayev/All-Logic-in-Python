@@ -41,7 +41,7 @@ def formulas_capturing_model(model: Model) -> List[Formula]:
     return [Formula(var) if model[var] else ~Formula(var) for var in vars]
 
 
-def prove_in_model(formula: Formula, model: Model) -> Proof:
+def prove_in_model(formula: Formula, model:Model) -> Proof:
     """Either proves the given formula or proves its negation, from the formulas
     that capture the given model.
 
@@ -51,25 +51,13 @@ def prove_in_model(formula: Formula, model: Model) -> Proof:
         model: model from whose formulas to prove.
 
     Returns:
-        If the given formula evaluates to ``True`` in the given model, then
-        a valid proof of the formula; otherwise a valid proof of
-        ``'~``\ `formula`\ ``'``. The returned proof is from the formulas that
-        capture the given model, in the order returned by
-        `formulas_capturing_model`\ ``(``\ `model`\ ``)``, via
-        `~propositions.axiomatic_systems.AXIOMATIC_SYSTEM`.
+        If `formula` evaluates to ``True`` in the given model, then a valid
+        proof of `formula`; otherwise a valid proof of ``'~``\ `formula`\ ``'``.
+        The returned proof is from the formulas that capture the given model, in
+        the order returned by `formulas_capturing_model`\ ``(``\ `model`\ ``)``,
+        via `~propositions.axiomatic_systems.AXIOMATIC_SYSTEM`.
 
     Examples:
-        >>> proof = prove_in_model(Formula.parse('(p->q7)'),
-        ...                        {'q7': False, 'p': True})
-        >>> proof.is_valid()
-        True
-        >>> proof.statement.conclusion
-        ~(p->q7)
-        >>> proof.statement.assumptions
-        (p, ~q7)
-        >>> proof.rules == AXIOMATIC_SYSTEM
-        True
-
         >>> proof = prove_in_model(Formula.parse('(p->q7)'),
         ...                        {'q7': False, 'p': False})
         >>> proof.is_valid()
@@ -80,105 +68,44 @@ def prove_in_model(formula: Formula, model: Model) -> Proof:
         (~p, ~q7)
         >>> proof.rules == AXIOMATIC_SYSTEM
         True
+
+        >>> proof = prove_in_model(Formula.parse('(p->q7)'),
+        ...                        {'q7': False, 'p': True})
+        >>> proof.is_valid()
+        True
+        >>> proof.statement.conclusion
+        ~(p->q7)
+        >>> proof.statement.assumptions
+        (p, ~q7)
+        >>> proof.rules == AXIOMATIC_SYSTEM
+        True
     """
-    assert formula.operators().issubset({"->", "~"})
+    assert formula.operators().issubset({'->', '~'})
     assert is_model(model)
     # Task 6.1b
+    rules = AXIOMATIC_SYSTEM
+    assumptions = formulas_capturing_model(model)
+    conclusion = formula if evaluate(formula, model) else Formula("~", formula)
+    statement = InferenceRule(assumptions, conclusion)
 
-    capturing_assumptions: List[Formula] = formulas_capturing_model(model)
-    evaluation: bool = evaluate(formula, model)
-
-    return formula_recursive_proof(
-        formula,
-        evaluation,
-        capturing_assumptions,
-        model,
-    )
-
-
-def formula_recursive_proof(
-    formula: Formula,
-    evaluation: bool,
-    assumptions: List[Formula],
-    model: Model,
-) -> Proof:
-    """Proves a formula recursively.
-
-    Parameters:
-        formula: The current formula to be True/False.
-        evaluation: Whether `formula` is being proven as True or False.
-        assumptions: Assumptions of the proof (read-only).
-        model: The model of the proof.
-
-    Returns:
-        A proof for the formula.
-    """
-    assert evaluate(formula, model) == evaluation
-
-    conclusion: Formula = formula if evaluation else ~formula
-    statement: InferenceRule = InferenceRule(assumptions, conclusion)
-
-    if is_variable(formula.root):
-        lines: List[Proof.Line] = [
-            Proof.Line(assum) for assum in assumptions
-        ] + [
-            Proof.Line(
-                Formula(
-                    BINARY_IMPLY,
-                    statement.conclusion,
-                    statement.conclusion,
-                ),
-                I0,
-                [],
-            ),
-            Proof.Line(
-                statement.conclusion,
-                MP,
-                [assumptions.index(conclusion), len(assumptions)],
-            ),
-        ]
-
-        return Proof(statement, AXIOMATIC_SYSTEM, lines)
-
-    if is_unary(formula.root):
-        # phi = ~psi
-        psi: Formula = formula.first  # type: ignore
-        assert formula.root == "~"
-
-        if evaluation:
-            # We need to prove `phi`, which is equivalent to proving not `psi`
-            return formula_recursive_proof(psi, False, assumptions, model)
-
-        # Otherwise, we need to prove `not phi`, which is equivalent to proving `psi`
-        prove_psi: Proof = formula_recursive_proof(
-            psi, True, assumptions, model
-        )
-
-        return prove_corollary(prove_psi, conclusion, NN)
-
-    if formula.root in [BINARY_IMPLY, NEGATE_SYM]:
-        phi_1: Formula = formula.first  # type: ignore
-        phi_2: Formula = formula.second  # type: ignore
-
-        if (
-            evaluation
-        ):  # Implication does hold, hence at least one of the following holds:
-            if not evaluate(phi_1, model):
-                prove_phi_1: Proof = formula_recursive_proof(
-                    phi_1, False, assumptions, model
-                )
-                return prove_corollary(prove_phi_1, conclusion, I2)
-
-            if evaluate(phi_2, model):
-                prove_phi_2: Proof = formula_recursive_proof(
-                    phi_2, True, assumptions, model
-                )
-                return prove_corollary(prove_phi_2, conclusion, I1)
-        # Otherwise, implication is False
-        prove_phi_1 = formula_recursive_proof(phi_1, True, assumptions, model)
-        prove_phi_2 = formula_recursive_proof(phi_2, False, assumptions, model)
-        return combine_proofs(prove_phi_1, prove_phi_2, conclusion, NI)
-
+    if conclusion in assumptions:
+        return Proof(statement, rules, [Proof.Line(conclusion)])
+    elif formula.root == "->":
+        lemma_first = prove_in_model(formula.first, model)
+        lemma_second = prove_in_model(formula.second, model)
+        if evaluate(formula, model):
+            if not evaluate(formula.first, model):
+                return prove_corollary(lemma_first, conclusion, I2)
+            elif evaluate(formula.second, model):
+                return prove_corollary(lemma_second, conclusion, I1)
+        else:
+            return combine_proofs(lemma_first, lemma_second, conclusion, NI)
+    elif formula.root == "~":
+        lemma = prove_in_model(formula.first, model)
+        if evaluate(formula, model):
+            return lemma
+        else:
+            return prove_corollary(lemma, conclusion, NN)
 
 def reduce_assumption(
     proof_from_affirmation: Proof, proof_from_negation: Proof
