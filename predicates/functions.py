@@ -649,7 +649,7 @@ def add_SAME_as_equality_in_model(model: Model[T]) -> Model[T]:
         model.constant_interpretations,
         {
             **model.relation_interpretations,
-            "SAME": {(abc, abc) for abc in model.universe},
+            "SAME": {(atom, atom) for atom in model.universe},
         },
         model.function_interpretations,
     )

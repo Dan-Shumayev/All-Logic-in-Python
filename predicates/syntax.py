@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from functools import reduce as ft_reduce
 from itertools import chain as it_chain
 from operator import attrgetter, methodcaller
 from re import compile as re_compile
@@ -469,6 +470,44 @@ class Term:
         for variable in forbidden_variables:
             assert is_variable(variable)
         # Task 9.1
+
+        Term._raise_excp_upon_forbid_var(
+            substitution_map, forbidden_variables, ft_reduce
+        )
+
+        return self.replace_const_var_template(substitution_map)
+
+    def replace_const_var_template(
+        self, substitution_map: Mapping[str, Term]
+    ) -> Term:
+
+        if is_function(self.root):
+            assert self.arguments
+            modified_args: List[Term] = [
+                arg.replace_const_var_template(substitution_map)
+                for arg in self.arguments
+            ]
+
+            return Term(self.root, modified_args)
+
+        return (
+            substitution_map[self.root]
+            if self.root in substitution_map.keys()
+            else Term(self.root)
+        )
+
+    @staticmethod
+    def _raise_excp_upon_forbid_var(
+        substitution_map, forbidden_variables, ft_reduce
+    ):
+        all_variables: Set[str] = ft_reduce(
+            lambda vars1, vars2: vars1 | vars2,
+            [term.variables() for term in substitution_map.values()],
+        )
+
+        for var in forbidden_variables:
+            if var in all_variables:
+                raise ForbiddenVariableError(var)
 
 
 @lru_cache(maxsize=100)  # Cache the return value of is_equality
