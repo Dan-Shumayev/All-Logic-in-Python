@@ -644,6 +644,16 @@ def add_SAME_as_equality_in_model(model: Model[T]) -> Model[T]:
     assert "SAME" not in model.relation_interpretations
     # Task 8.7
 
+    return Model(
+        model.universe,
+        model.constant_interpretations,
+        {
+            **model.relation_interpretations,
+            "SAME": {(abc, abc) for abc in model.universe},
+        },
+        model.function_interpretations,
+    )
+
 
 def make_equality_as_SAME_in_model(model: Model[T]) -> Model[T]:
     """Converts the given model to a model where equality coincides with the
