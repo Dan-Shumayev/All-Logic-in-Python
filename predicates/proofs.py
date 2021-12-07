@@ -845,6 +845,10 @@ class Proof:
             assert line_number < len(lines) and lines[line_number] is self
             # Task 9.9
 
+            return is_propositional_tautology(
+                self.formula.propositional_skeleton()[0]
+            )
+
     #: An immutable proof line.
     Line = Union[AssumptionLine, MPLine, UGLine, TautologyLine]
 

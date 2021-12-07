@@ -13,23 +13,11 @@ from functools import reduce as ft_reduce
 from itertools import chain as it_chain
 from operator import attrgetter, methodcaller
 from re import compile as re_compile
-from typing import (
-    AbstractSet,
-    Iterator,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-)
+from typing import (AbstractSet, Dict, Iterator, List, Mapping, Optional,
+                    Sequence, Set, Tuple, Union)
 
-from logic_utils import (
-    fresh_variable_name_generator,
-    frozen,
-    memoized_parameterless_method,
-)
+from logic_utils import (fresh_variable_name_generator, frozen,
+                         memoized_parameterless_method)
 from propositions.syntax import Formula as PropositionalFormula
 from propositions.syntax import is_variable as is_propositional_variable
 
@@ -1015,7 +1003,6 @@ class Formula:
             >>> formula.propositional_skeleton()
             (((z4&z5)|(~z6->z5)), {'z4': Ax[x=7], 'z5': x=7, 'z6': Q(y)})
         """
-        from typing import Dict
 
         prop_form_to_pred_form: Dict[Formula, str] = dict()
 
@@ -1082,3 +1069,25 @@ class Formula:
         for variable in skeleton.variables():
             assert variable in substitution_map
         # Task 9.10
+
+        if is_unary(skeleton.root):
+            return Formula(
+                skeleton.root,
+                Formula.from_propositional_skeleton(
+                    skeleton.first, substitution_map
+                ),
+            )
+
+        if is_binary(skeleton.root):
+            return Formula(
+                skeleton.root,
+                Formula.from_propositional_skeleton(
+                    skeleton.first, substitution_map
+                ),
+                Formula.from_propositional_skeleton(
+                    skeleton.second, substitution_map
+                ),
+            )
+
+
+        return substitution_map[skeleton.root]
