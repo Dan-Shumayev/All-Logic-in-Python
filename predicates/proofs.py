@@ -626,6 +626,12 @@ class Proof:
             assert line_number < len(lines) and lines[line_number] is self
             # Task 9.5
 
+            return (
+                self.assumption in assumptions
+                and self.assumption.instantiate(self.instantiation_map)
+                == self.formula
+            )
+
     @frozen
     class MPLine:
         """An immutable proof line justified by the Modus Ponens (MP) inference
@@ -705,6 +711,16 @@ class Proof:
             assert line_number < len(lines) and lines[line_number] is self
             # Task 9.6
 
+            antedecent: Formula = lines[self.antecedent_line_number].formula
+            conditional: Formula = lines[self.conditional_line_number].formula
+
+            return (
+                antedecent == conditional.first
+                and self.formula == conditional.second
+                and self.conditional_line_number < line_number
+                and self.antecedent_line_number < line_number
+            )
+
     @frozen
     class UGLine:
         """An immutable proof line justified by the Universal Generalization
@@ -768,6 +784,18 @@ class Proof:
             """
             assert line_number < len(lines) and lines[line_number] is self
             # Task 9.7
+
+            nonquantified: Formula = lines[
+                self.nonquantified_line_number
+            ].formula
+
+            curr_line: Formula = lines[line_number].formula
+
+            return (
+                curr_line.root == "A"
+                and curr_line.statement == nonquantified
+                and self.nonquantified_line_number < line_number
+            )
 
     @frozen
     class TautologyLine:
