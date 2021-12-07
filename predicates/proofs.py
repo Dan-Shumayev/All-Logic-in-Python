@@ -1000,6 +1000,11 @@ def _axiom_specialization_map_to_schema_instantiation_map(
         assert is_propositional_variable(variable)
     # Task 9.11a
 
+    return {
+        k.upper(): Formula.from_propositional_skeleton(v, substitution_map)
+        for k, v in propositional_specialization_map.items()
+    }
+
 
 def _prove_from_skeleton_proof(
     formula: Formula,
@@ -1042,6 +1047,41 @@ def _prove_from_skeleton_proof(
             assert is_unary(operator) or is_binary(operator)
     # Task 9.11b
 
+    lines: List[Proof.Line] = list()
+
+    for line in skeleton_proof.lines:
+        if line.rule == MP:
+            lines.append(
+                Proof.MPLine(
+                    Formula.from_propositional_skeleton(
+                        line.formula, substitution_map
+                    ),
+                    line.assumptions[0],
+                    line.assumptions[1],
+                )
+            )
+        if not line.assumptions:  # Tautology
+            lines.append(
+                Proof.AssumptionLine(
+                    Formula.from_propositional_skeleton(
+                        line.formula, substitution_map
+                    ),
+                    PROPOSITIONAL_AXIOM_TO_SCHEMA[line.rule],
+                    _axiom_specialization_map_to_schema_instantiation_map(
+                        PropositionalInferenceRule._formula_specialization_map(
+                            line.rule.conclusion, line.formula
+                        ),
+                        substitution_map,
+                    ),
+                )
+            )
+
+    return Proof(
+        PROPOSITIONAL_AXIOMATIC_SYSTEM_SCHEMAS,
+        formula,
+        lines,
+    )
+
 
 def prove_tautology(tautology: Formula) -> Proof:
     """Proves the given predicate-logic tautology.
@@ -1060,3 +1100,7 @@ def prove_tautology(tautology: Formula) -> Proof:
     assert is_propositional_tautology(skeleton)
     assert skeleton.operators().issubset({"->", "~"})
     # Task 9.12
+
+    prop_form, mapping = Formula.propositional_skeleton(tautology)
+    prop_tautology_proof = prove_propositional_tautology(prop_form)
+    return _prove_from_skeleton_proof(tautology, prop_tautology_proof, mapping)

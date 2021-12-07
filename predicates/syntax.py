@@ -13,11 +13,24 @@ from functools import reduce as ft_reduce
 from itertools import chain as it_chain
 from operator import attrgetter, methodcaller
 from re import compile as re_compile
-from typing import (AbstractSet, Dict, Iterator, List, Mapping, Optional,
-                    Sequence, Set, Tuple, Union)
+from typing import (
+    AbstractSet,
+    Dict,
+    Iterator,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
-from logic_utils import (fresh_variable_name_generator, frozen,
-                         memoized_parameterless_method)
+from logic_utils import (
+    fresh_variable_name_generator,
+    frozen,
+    memoized_parameterless_method,
+)
 from propositions.syntax import Formula as PropositionalFormula
 from propositions.syntax import is_variable as is_propositional_variable
 
@@ -811,7 +824,7 @@ class Formula:
         # Task 7.6c
 
         if is_equality(self.root) or is_relation(self.root):
-            assert self.arguments
+            # assert self.arguments
             return set(
                 it_chain.from_iterable(
                     arg.variables() for arg in self.arguments
@@ -1088,6 +1101,5 @@ class Formula:
                     skeleton.second, substitution_map
                 ),
             )
-
 
         return substitution_map[skeleton.root]
