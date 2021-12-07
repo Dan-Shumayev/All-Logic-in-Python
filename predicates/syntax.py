@@ -72,8 +72,8 @@ def is_constant(string: str) -> bool:
     """
     return (
         (
-            (string[0] >= "0" and string[0] <= "9")
-            or (string[0] >= "a" and string[0] <= "e")
+            ("0" <= string[0] <= "9")
+            or ("a" <= string[0] <= "e")
         )
         and string.isalnum()
     ) or string == "_"
