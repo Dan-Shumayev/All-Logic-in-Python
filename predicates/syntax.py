@@ -817,7 +817,7 @@ class Formula:
         """Finds all variable names that are free in the current formula.
 
         Returns:
-            A set of every variable name that is used in the current formula not
+            A set of every variable name that is used in te hcurrent formula not
             only within a scope of a quantification on that variable name.
         """
         # Task 7.6c
@@ -1015,7 +1015,35 @@ class Formula:
             >>> formula.propositional_skeleton()
             (((z4&z5)|(~z6->z5)), {'z4': Ax[x=7], 'z5': x=7, 'z6': Q(y)})
         """
-        # Task 9.8
+        from typing import Dict
+
+        prop_form_to_pred_form: Dict[Formula, str] = dict()
+
+        def _helper(formula: Formula) -> PropositionalFormula:
+            if is_unary(formula.root):
+                return PropositionalFormula(
+                    formula.root, _helper(formula.first)
+                )
+
+            if is_binary(formula.root):
+                return PropositionalFormula(
+                    formula.root,
+                    _helper(formula.first),
+                    _helper(formula.second),
+                )
+            else:
+                if formula in prop_form_to_pred_form.keys():
+                    return PropositionalFormula(prop_form_to_pred_form[formula])
+                else:
+                    prop_form: str = next(fresh_variable_name_generator)
+                    prop_form_to_pred_form[formula] = prop_form
+                    return PropositionalFormula(prop_form)
+
+        formula_as_prop_formula = _helper(self)
+
+        return formula_as_prop_formula, {
+            v: k for k, v in prop_form_to_pred_form.items()
+        }
 
     @staticmethod
     def from_propositional_skeleton(
