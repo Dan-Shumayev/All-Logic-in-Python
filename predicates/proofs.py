@@ -284,7 +284,7 @@ class Schema:
                 if common_vars:
                     raise Schema.BoundVariableError(
                         common_vars.pop(),
-                        substituted_relation.root,
+                        formula.root,
                     )
                 if not formula.arguments:  # Nullary relation
                     return substituted_relation
@@ -478,6 +478,30 @@ class Schema:
                 assert is_relation(construct)
                 assert isinstance(instantiation_map[construct], Formula)
         # Task 9.4
+
+        if not instantiation_map.keys() <= self.templates:
+            return None
+
+        try:
+            return Schema._instantiate_helper(
+                self.formula,
+                {
+                    **{
+                        k: v
+                        for k, v in instantiation_map.items()
+                        if is_constant(k)
+                    },
+                    **{
+                        k: Term(v)
+                        for k, v in instantiation_map.items()
+                        if is_variable(k)
+                    },
+                },
+                {k: v for k, v in instantiation_map.items() if is_relation(k)},
+            )
+
+        except (Schema.BoundVariableError, ForbiddenVariableError):
+            return None
 
 
 @frozen
