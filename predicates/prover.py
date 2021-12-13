@@ -448,6 +448,26 @@ class Prover:
         assert conditional == Formula("->", quantified.statement, consequent)
         # Task 10.3
 
+        ug_formula = Formula("A", quantified.variable, conditional)
+        ug_line_num: int = self.add_ug(ug_formula, line_number2)
+
+        es_mapping: InstantiationMap = {
+            "R": quantified.statement.substitute(
+                {quantified.variable: Term("_")}
+            ),
+            "Q": consequent,
+            "x": quantified.variable,
+        }
+        es_line_num: int = self.add_instantiated_assumption(
+            Prover.ES.instantiate(es_mapping),
+            Prover.ES,
+            es_mapping,
+        )
+
+        return self.add_tautological_implication(
+            consequent, {ug_line_num, es_line_num, line_number1}
+        )
+
     def add_flipped_equality(
         self, flipped: Union[Formula, str], line_number: int
     ) -> int:
