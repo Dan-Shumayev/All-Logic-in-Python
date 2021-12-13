@@ -7,8 +7,16 @@
 """Axiomatic schemas of Predicate Logic, and useful proof creation maneuvers
 using them."""
 
-from typing import (AbstractSet, Collection, FrozenSet, List, Mapping,
-                    Sequence, Tuple, Union)
+from typing import (
+    AbstractSet,
+    Collection,
+    FrozenSet,
+    List,
+    Mapping,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from logic_utils import fresh_variable_name_generator
 
@@ -354,7 +362,6 @@ class Prover:
 
         return self.add_mp(instantiation, line_number, applied_ui_line_num)
 
-
     def add_tautological_implication(
         self, implication: Union[Formula, str], line_numbers: AbstractSet[int]
     ) -> int:
@@ -374,10 +381,33 @@ class Prover:
             formula in the proof being created by the current prover.
         """
         if isinstance(implication, str):
-            implication = Formula.parse(implication)
-        for line_number in line_numbers:
-            assert line_number < len(self._lines)
+            implication: Formula = Formula.parse(implication)
+        for line in line_numbers:
+            assert line < len(self._lines)
         # Task 10.2
+
+        tautology_formula: Union[Formula, str] = implication
+
+        line_numbers_sorted: List[int] = sorted(
+            line_numbers, reverse=True
+        )  # Iterate over the assumptions in descending order
+
+        lines_sorted: Iterator[Proof.Line] = map(
+            lambda line_num: self._lines[line_num].formula, line_numbers_sorted
+        )
+
+        for line in lines_sorted:
+            tautology_formula = Formula("->", line, tautology_formula)
+
+        last_line_num: int = self.add_tautology(tautology_formula)
+        for line in line_numbers_sorted[::-1]:
+            last_line_num = self.add_mp(
+                self._lines[last_line_num].formula.second,  # type: ignore
+                line,
+                last_line_num,
+            )
+
+        return last_line_num
 
     def add_existential_derivation(
         self,
