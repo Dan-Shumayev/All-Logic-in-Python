@@ -960,13 +960,15 @@ class Formula:
 
             return Formula(self.root, args)
 
-        if is_unary(self.root):
+        elif is_unary(self.root):
+            assert self.first
+
             return Formula(
                 self.root,
-                self.substitute(substitution_map, forbidden_variables),
+                self.first.substitute(substitution_map, forbidden_variables),
             )
 
-        if is_binary(self.root):
+        elif is_binary(self.root):
             assert self.first and self.second
 
             return Formula(
@@ -975,7 +977,7 @@ class Formula:
                 self.second.substitute(substitution_map, forbidden_variables),
             )
 
-        if is_quantifier(self.root):
+        elif is_quantifier(self.root):
             assert self.variable and self.statement
 
             return Formula(
