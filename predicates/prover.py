@@ -491,11 +491,51 @@ class Prover:
             flipped = Formula.parse(flipped)
         assert is_equality(flipped.root)
         assert line_number < len(self._lines)
-        equality = self._lines[line_number].formula
+        equality: Formula = self._lines[line_number].formula
         assert equality == Formula(
             "=", [flipped.arguments[1], flipped.arguments[0]]
         )
         # Task 10.6
+        assert equality.arguments
+
+        # To be proved: {a}={b} -> ({a}={a} -> {b}={a}) -> {b}={a}
+        # TODO - can be made efficient by storing the equalities in variables
+        #           instead of parsing them again and again
+
+        equality_lhs: Term = equality.arguments[0]
+        equality_rhs: Term = equality.arguments[1]
+
+        reflexive_a: int = self.add_instantiated_assumption(
+            Formula.parse(f"{equality_lhs}={equality_lhs}"),
+            Prover.RX,
+            {"c": equality_lhs},
+        )
+
+        implied_by_ME: int = self.add_instantiated_assumption(
+            Formula.parse(
+                f"({equality_lhs}={equality_rhs}->({equality_lhs}={equality_lhs}->{equality_rhs}={equality_lhs}))"
+            ),
+            Prover.ME,
+            {
+                "R": f"_={equality_lhs}",
+                "c": equality_lhs,
+                "d": equality_rhs,
+            },
+        )
+
+        mp_first: int = self.add_mp(
+            Formula.parse(
+                f"({equality_lhs}={equality_lhs}->{equality_rhs}={equality_lhs})"
+            ),
+            line_number,
+            implied_by_ME,
+        )
+
+        return self.add_mp(
+            Formula.parse(f"{equality_rhs}={equality_lhs}"),
+            reflexive_a,
+            mp_first,
+        )
 
     def add_free_instantiation(
         self,
