@@ -306,6 +306,31 @@ def prove_homework(print_as_proof_forms: bool = False) -> Proof:
         print_as_proof_forms,
     )
     # Task 10.5
+
+    step1 = prover.add_assumption("~Ex[(Homework(x)&Fun(x))]")
+    step2 = prover.add_assumption("Ex[(Homework(x)&Reading(x))]")
+    step3 = prover.add_instantiated_assumption(
+        "((Homework(x)&Fun(x))->Ex[(Homework(x)&Fun(x))])",
+        Prover.EI,
+        {"R": "(Homework(_)&Fun(_))", "c": "x"},
+    )
+    step4 = prover.add_tautological_implication(
+        "(~Ex[(Homework(x)&Fun(x))]->~(Homework(x)&Fun(x)))", {step3}
+    )
+    step5 = prover.add_mp("~(Homework(x)&Fun(x))", step1, step4)
+    step6 = prover.add_tautological_implication(
+        "((Homework(x)&Reading(x))->(Reading(x)&~Fun(x)))", {step5}
+    )
+    step7 = prover.add_instantiated_assumption(
+        "((Reading(x)&~Fun(x))->Ex[(Reading(x)&~Fun(x))])",
+        Prover.EI,
+        {"R": "(Reading(_)&~Fun(_))", "c": "x"},
+    )
+    step8 = prover.add_tautological_implication(
+        "((Homework(x)&Reading(x))->Ex[(Reading(x)&~Fun(x))])", {step7, step6}
+    )
+    prover.add_existential_derivation("Ex[(Reading(x)&~Fun(x))]", step2, step8)
+
     return prover.qed()
 
 
@@ -462,6 +487,36 @@ def prove_group_unique_zero(print_as_proof_forms: bool = False) -> Proof:
     """
     prover = Prover(GROUP_AXIOMS.union({"plus(a,c)=a"}), print_as_proof_forms)
     # Task 10.10
+
+    negated_assum: int = prover.add_assumption("plus(minus(x),x)=0")
+    neutral_assum: int = prover.add_assumption("plus(0,x)=x")
+    associativity_asum: int = prover.add_assumption(
+        "plus(plus(x,y),z)=plus(x,plus(y,z))"
+    )
+
+    line1: int = prover.add_assumption("plus(a,c)=a")
+    line2: int = prover.add_free_instantiation(
+        "plus(minus(a),a)=0", negated_assum, {"x": "a"}
+    )
+    line3: int = prover.add_substituted_equality(
+        "plus(minus(a),plus(a,c))=plus(minus(a),a)", line1, "plus(minus(a),_)"
+    )
+    line4: int = prover.add_flipped_equality("0=plus(minus(a),a)", line2)
+    line5: int = prover.add_free_instantiation(
+        "plus(0,c)=c", neutral_assum, {"x": "c"}
+    )
+    line6: int = prover.add_substituted_equality(
+        "plus(0,c)=plus(plus(minus(a),a),c)", line4, "plus(_,c)"
+    )
+    line7: int = prover.add_flipped_equality("c=plus(0,c)", line5)
+    line8: int = prover.add_free_instantiation(
+        "plus(plus(minus(a),a),c)=plus(minus(a),plus(a,c))",
+        associativity_asum,
+        {"x": "minus(a)", "y": "a", "z": "c"},
+    )
+
+    prover.add_chained_equality("c=0", [line7, line6, line8, line3, line2])
+
     return prover.qed()
 
 
