@@ -550,6 +550,97 @@ def prove_field_zero_multiplication(
     """
     prover = Prover(FIELD_AXIOMS, print_as_proof_forms)
     # Task 10.11
+
+    # Proof: 0*x=0 by (0*x)+(0*x)= 0*x and previous proof (a+c=c)->c=0
+
+    distributive_axiom: int = prover.add_assumption(
+        "times(x,plus(y,z))=plus(times(x,y),times(x,z))"
+    )
+    neutral_axiom: int = prover.add_assumption("plus(0,x)=x")
+    mul_comm_axiom: int = prover.add_assumption("times(x,y)=times(y,x)")
+    negated_axiom: int = prover.add_assumption("plus(minus(x),x)=0")
+    associative_axiom: int = prover.add_assumption(
+        "plus(plus(x,y),z)=plus(x,plus(y,z))"
+    )
+
+    def add_intermediate_proof() -> int:
+        line1: int = prover.add_free_instantiation(
+            "plus(0,0)=0", neutral_axiom, {"x": "0"}
+        )
+        flipped_zeroed_eq: int = prover.add_flipped_equality(
+            "0=plus(0,0)", line1
+        )
+
+        line3: int = prover.add_free_instantiation(
+            "times(x,0)=times(0,x)", mul_comm_axiom, {"x": "x", "y": "0"}
+        )
+        line4: int = prover.add_substituted_equality(
+            "plus(times(x,0),times(0,x))=plus(times(0,x),times(0,x))",
+            line3,
+            "plus(_,times(0,x))",
+        )
+        line5: int = prover.add_substituted_equality(
+            "plus(times(x,0),times(x,0))=plus(times(x,0),times(0,x))",
+            line3,
+            "plus(times(x,0),_)",
+        )
+        line6: int = prover.add_free_instantiation(
+            "times(x,plus(0,0))=plus(times(x,0),times(x,0))",
+            distributive_axiom,
+            {"x": "x", "y": "0", "z": "0"},
+        )
+        line7: int = prover.add_substituted_equality(
+            "times(x,0)=times(x,plus(0,0))", flipped_zeroed_eq, "times(x,_)"
+        )
+        line8: int = prover.add_free_instantiation(
+            "times(0,x)=times(x,0)", mul_comm_axiom, {"x": "0", "y": "x"}
+        )
+        line9: int = prover.add_chained_equality(
+            "times(0,x)=plus(times(0,x),times(0,x))",
+            [line8, line7, line6, line5, line4],
+        )
+
+        return prover.add_flipped_equality(
+            "plus(times(0,x),times(0,x))=times(0,x)", line9
+        )
+
+    def add_unique_zero_corollary() -> None:
+        line11: int = add_intermediate_proof()
+
+        a_c: str = "times(0,x)"
+        line12: int = prover.add_substituted_equality(
+            f"plus(minus({a_c}),plus({a_c},{a_c}))=plus(minus({a_c}),{a_c})",
+            line11,
+            f"plus(minus({a_c}),_)",
+        )
+        line13: int = prover.add_free_instantiation(
+            f"plus(minus({a_c}),{a_c})=0", negated_axiom, {"x": a_c}
+        )
+        line14: int = prover.add_free_instantiation(
+            f"plus(plus(minus({a_c}),{a_c}),{a_c})=plus(minus({a_c}),plus({a_c},{a_c}))",
+            associative_axiom,
+            {"x": f"minus({a_c})", "y": a_c, "z": a_c},
+        )
+        line15: int = prover.add_flipped_equality(
+            f"0=plus(minus({a_c}),{a_c})", line13
+        )
+        line16: int = prover.add_substituted_equality(
+            f"plus(0,{a_c})=plus(plus(minus({a_c}),{a_c}),{a_c})",
+            line15,
+            f"plus(_,{a_c})",
+        )
+        line17: int = prover.add_free_instantiation(
+            f"plus(0,{a_c})={a_c}", neutral_axiom, {"x": a_c}
+        )
+        line18: int = prover.add_flipped_equality(
+            f"{a_c}=plus(0,{a_c})", line17
+        )
+        prover.add_chained_equality(
+            f"{a_c}=0", [line18, line16, line14, line12, line13]
+        )
+
+    add_unique_zero_corollary()
+
     return prover.qed()
 
 
@@ -585,6 +676,48 @@ def prove_peano_left_neutral(print_as_proof_forms: bool = False) -> Proof:
     """
     prover = Prover(PEANO_AXIOMS, print_as_proof_forms)
     # Task 10.12
+
+    zero_as_right_neutral: int = prover.add_assumption("plus(x,0)=x")
+    peano_axiom: int = prover.add_assumption("plus(x,s(y))=s(plus(x,y))")
+
+    base_formula: str = "plus(0,0)=0"
+    step_formula: str = "Ax[(plus(0,x)=x->plus(0,s(x))=s(x))]"
+    induction_corollary: str = "plus(0,x)=x"
+    induction_formula_line_num: int = prover.add_instantiated_assumption(
+        f"(({base_formula}&{step_formula})->Ax[{induction_corollary}])",
+        INDUCTION_AXIOM,
+        {"R": "plus(0,_)=_"},
+    )
+
+    # induction step
+    line1: int = prover.add_free_instantiation(
+        "plus(0,s(x))=s(plus(0,x))", peano_axiom, {"x": "0", "y": "x"}
+    )
+    line2: int = prover.add_instantiated_assumption(
+        "(plus(0,x)=x->(plus(0,s(x))=s(plus(0,x))->plus(0,s(x))=s(x)))",
+        Prover.ME,
+        {"R": "plus(0,s(x))=s(_)", "c": "plus(0,x)", "d": "x"},
+    )
+    line3: int = prover.add_tautological_implication(
+        "(plus(0,x)=x->plus(0,s(x))=s(x))", {line2, line1}
+    )
+    induction_step: int = prover.add_ug(step_formula, line3)
+
+    # induction base
+    induction_base: int = prover.add_free_instantiation(
+        base_formula, zero_as_right_neutral, {"x": "0"}
+    )
+
+    # conclusion
+    base_and_step: int = prover.add_tautological_implication(
+        f"({base_formula}&{step_formula})", {induction_base, induction_step}
+    )
+    ug_conclusion: int = prover.add_mp(
+        f"Ax[{induction_corollary}]", base_and_step, induction_formula_line_num
+    )
+
+    prover.add_universal_instantiation(induction_corollary, ug_conclusion, "x")
+
     return prover.qed()
 
 
@@ -608,6 +741,36 @@ def prove_russell_paradox(print_as_proof_forms: bool = False) -> Proof:
     """
     prover = Prover({COMPREHENSION_AXIOM}, print_as_proof_forms)
     # Task 10.13
+
+    # contradiction implies contradiction is a tautology
+    contradiction_as_taut: int = prover.add_tautology(
+        "(((In(y,y)->~In(y,y))&(~In(y,y)->In(y,y)))->(z=z&~z=z))"
+    )
+
+    UI_mapping: Dict[str, Union[Term, Formula]] = {
+        "R": Formula.parse("((In(_,y)->~In(_,_))&(~In(_,_)->In(_,y)))"),
+        "c": Term("y"),
+    }
+
+    contradiction_instantiated: int = prover.add_instantiated_assumption(
+        Prover.UI.instantiate(UI_mapping), Prover.UI, UI_mapping
+    )
+
+    conclusion_as_taut: int = prover.add_tautological_implication(
+        "(Ax[((In(x,y)->~In(x,x))&(~In(x,x)->In(x,y)))]->(z=z&~z=z))",
+        {contradiction_instantiated, contradiction_as_taut},
+    )
+
+    instantiated_comprehension: int = prover.add_instantiated_assumption(
+        COMPREHENSION_AXIOM.instantiate({"R": Formula.parse("~In(_,_)")}),
+        COMPREHENSION_AXIOM,
+        {"R": "~In(_,_)"},
+    )
+
+    prover.add_existential_derivation(
+        "(z=z&~z=z)", instantiated_comprehension, conclusion_as_taut
+    )
+
     return prover.qed()
 
 
