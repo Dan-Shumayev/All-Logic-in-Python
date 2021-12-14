@@ -733,6 +733,38 @@ class Prover:
         assert equality1.arguments[1] == equality2.arguments[0]
         # Task 10.9a
 
+        assert equality1.arguments and equality2.arguments
+
+        # a=b & b=c ==> Prove that b=c
+        first: Term = equality1.arguments[0]
+        second: Term = equality1.arguments[1]
+        third: Term = equality2.arguments[1]
+
+        # b=a => b=c -> a=c (by ME and _=c as R)
+        ME_mapping: Dict[str, Union[Term, Formula]] = {
+            "R": Formula("=", [Term("_"), third]),
+            "c": second,
+            "d": first,
+        }
+        ME_instance: Formula = Prover.ME.instantiate(ME_mapping)
+        first_eq_third_by_ME: int = self.add_instantiated_assumption(
+            ME_instance, Prover.ME, ME_mapping
+        )
+
+        # a=b => b=a
+        first_eq_flipped_line: int = self.add_flipped_equality(
+            Formula("=", [second, first]), line_number1
+        )
+        # b=c -> a=c (by b=a -> b=c -> a=c AND MP)
+        intermediate_MP: int = self.add_mp(
+            ME_instance.second, first_eq_flipped_line, first_eq_third_by_ME
+        )
+
+        # a=c by (b=c -> a=c AND MP)
+        return self.add_mp(
+            Formula("=", [first, third]), line_number2, intermediate_MP
+        )
+
     def add_chained_equality(
         self, chained: Union[Formula, str], line_numbers: Sequence[int]
     ) -> int:
@@ -778,3 +810,12 @@ class Prover:
             current_term = equality.arguments[1]
         assert chained.arguments[1] == current_term
         # Task 10.9b
+
+        last_chained_eq_line: int = line_numbers[0]
+
+        for line_num in line_numbers[1:]:
+            last_chained_eq_line = self._add_chaining_of_two_equalities(
+                last_chained_eq_line, line_num
+            )
+
+        return last_chained_eq_line
