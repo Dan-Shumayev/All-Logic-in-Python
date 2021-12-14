@@ -681,6 +681,25 @@ class Prover:
         )
         # Task 10.8
 
+        first, second = equality.arguments
+        first_as_term: Term = parametrized_term.substitute({"_": first})
+        mapping = {
+            "R": Formula("=", [first_as_term, parametrized_term]),
+            "c": first,
+            "d": second,
+        }
+        instance = Prover.ME.instantiate(mapping)
+
+        step1 = self.add_instantiated_assumption(instance, Prover.ME, mapping)
+        step2 = self.add_mp(instance.second, line_number, step1)
+        step3 = self.add_instantiated_assumption(
+            Formula("=", [first_as_term, first_as_term]),
+            Prover.RX,
+            {"c": first_as_term},
+        )
+
+        return self.add_mp(substituted, step3, step2)
+
     def _add_chaining_of_two_equalities(
         self, line_number1: int, line_number2: int
     ) -> int:
