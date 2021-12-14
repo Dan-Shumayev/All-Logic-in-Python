@@ -448,14 +448,15 @@ class Prover:
         assert conditional == Formula("->", quantified.statement, consequent)
         # Task 10.3
 
-        ug_formula = Formula("A", quantified.variable, conditional)
-        ug_line_num: int = self.add_ug(ug_formula, line_number2)
+        ug_line_num: int = self.add_ug(
+            Formula("A", quantified.variable, conditional), line_number2
+        )
 
         es_mapping: InstantiationMap = {
+            "Q": consequent,
             "R": quantified.statement.substitute(
                 {quantified.variable: Term("_")}
             ),
-            "Q": consequent,
             "x": quantified.variable,
         }
         es_line_num: int = self.add_instantiated_assumption(
@@ -593,6 +594,44 @@ class Prover:
         for variable in instantiation.variables():
             assert variable[0] != "z"
         # Task 10.7
+
+        def append_UG_UI(
+            sub_map: Dict[str, Term],
+            fresh_to_mapped: Dict[str, Term],
+            last_appended_line: int,
+        ) -> int:
+            formula: Formula = self._lines[last_appended_line].formula
+
+            for v in formula.variables():
+                last_appended_line = self.add_ug(
+                    Formula.parse(f"A{v}[{formula}]"), last_appended_line
+                )
+                formula = formula.substitute({v: sub_map[v]})
+                last_appended_line = self.add_universal_instantiation(
+                    formula, last_appended_line, sub_map[v]
+                )
+
+            for v in formula.variables():
+                last_appended_line = self.add_ug(
+                    Formula.parse(f"A{v}[{formula}]"), last_appended_line
+                )
+                formula = formula.substitute({v: fresh_to_mapped[v]})
+                last_appended_line = self.add_universal_instantiation(
+                    formula, last_appended_line, fresh_to_mapped[v]
+                )
+
+            return last_appended_line
+
+        substituted_to_fresh, fresh_to_mapped = dict(), dict()
+
+        for substituted_var in substitution_map.keys():
+            tmp_substituted_var: str = next(fresh_variable_name_generator)
+            substituted_to_fresh[substituted_var] = Term(tmp_substituted_var)
+            fresh_to_mapped[tmp_substituted_var] = substitution_map[
+                substituted_var
+            ]
+
+        return append_UG_UI(substituted_to_fresh, fresh_to_mapped, line_number)
 
     def add_substituted_equality(
         self,
