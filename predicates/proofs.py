@@ -625,6 +625,9 @@ class Proof:
             """
             assert line_number < len(lines) and lines[line_number] is self
             # Task 9.5
+            return self.assumption in assumptions \
+                and self.assumption.instantiate(self.instantiation_map) == self.formula
+
 
             return (
                 self.assumption in assumptions
@@ -710,7 +713,6 @@ class Proof:
             """
             assert line_number < len(lines) and lines[line_number] is self
             # Task 9.6
-
             antedecent: Formula = lines[self.antecedent_line_number].formula
             conditional: Formula = lines[self.conditional_line_number].formula
 
@@ -1046,7 +1048,6 @@ def _prove_from_skeleton_proof(
         for operator in line.formula.operators():
             assert is_unary(operator) or is_binary(operator)
     # Task 9.11b
-
     lines: List[Proof.Line] = list()
 
     for line in skeleton_proof.lines:

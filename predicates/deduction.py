@@ -30,7 +30,7 @@ def remove_assumption(proof: Proof, assumption: Formula,
     Returns:
         A valid proof of ``'(``\ `assumption`\ ``->``\ `conclusion`\ ``)'``
         from the same assumptions/axioms as the given proof except `assumption`.
-    """        
+    """
     assert proof.is_valid()
     assert Schema(assumption) in proof.assumptions
     assert proof.assumptions.issuperset(Prover.AXIOMS)
@@ -38,6 +38,39 @@ def remove_assumption(proof: Proof, assumption: Formula,
         if isinstance(line, Proof.UGLine):
             assert line.formula.variable not in assumption.free_variables()
     # Task 11.1
+
+    prover = Prover({a for a in proof.assumptions if a.formula != assumption}, True) # print_as_proof_forms)
+    phi = assumption
+    line_in_new_proof = dict()
+
+    for i, line in enumerate(proof.lines):
+        if isinstance(line, Proof.TautologyLine) or line.formula == phi:
+            line_in_new_proof[i] = prover.add_tautology(f'({phi}->{line.formula})')
+
+        elif isinstance(line, Proof.AssumptionLine):
+            alpha = line.formula
+            step1 = prover.add_instantiated_assumption(alpha, line.assumption, line.instantiation_map)
+            step2 = prover.add_tautology(f'({alpha}->({phi}->{alpha}))')
+            line_in_new_proof[i] = prover.add_mp(f'({phi}->{alpha})', step1, step2)
+
+        elif isinstance(line, Proof.MPLine):
+            alpha = proof.lines[line.antecedent_line_number].formula
+            beta = line.formula
+            step1 = prover.add_tautology(f'(({phi}->({alpha}->{beta}))->(({phi}->{alpha})->({phi}->{beta}))')
+            step2 = prover.add_mp(f'(({phi}->{alpha})->({phi}->{beta}))', line_in_new_proof[line.conditional_line_number], step1)
+            line_in_new_proof[i] = prover.add_mp(f'({phi}->{beta})', line_in_new_proof[line.antecedent_line_number], step2)
+
+        elif isinstance(line, Proof.UGLine):
+            alpha: Formula = proof.lines[line.nonquantified_line_number].formula
+            x = line.formula.variable
+            step1 = prover.add_ug(f'A{x}[({phi}->{alpha})]', line_in_new_proof[line.nonquantified_line_number])
+            us_map = {'Q': phi, 'R': alpha.substitute({x: Term.parse('_')}), 'x': x}
+            step2 = prover.add_instantiated_assumption(Prover.US.instantiate(us_map), Prover.US, us_map)
+            line_in_new_proof[i] = prover.add_mp(f'({phi}->A{x}[{alpha}])', step1, step2)
+
+    return prover.qed()
+
+
 
 def prove_by_way_of_contradiction(proof: Proof, assumption: Formula) -> Proof:
     """Converts the given proof of a contradiction, an assumption of which is
