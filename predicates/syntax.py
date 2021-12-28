@@ -15,6 +15,7 @@ from operator import attrgetter, methodcaller
 from re import compile as re_compile
 from typing import (
     AbstractSet,
+    Dict,
     Iterator,
     List,
     Mapping,
@@ -817,13 +818,13 @@ class Formula:
         """Finds all variable names that are free in the current formula.
 
         Returns:
-            A set of every variable name that is used in the current formula not
+            A set of every variable name that is used in te hcurrent formula not
             only within a scope of a quantification on that variable name.
         """
         # Task 7.6c
 
         if is_equality(self.root) or is_relation(self.root):
-            assert self.arguments
+            # assert self.arguments
             return set(
                 it_chain.from_iterable(
                     arg.variables() for arg in self.arguments
@@ -959,13 +960,15 @@ class Formula:
 
             return Formula(self.root, args)
 
-        if is_unary(self.root):
+        elif is_unary(self.root):
+            assert self.first
+
             return Formula(
                 self.root,
-                self.substitute(substitution_map, forbidden_variables),
+                self.first.substitute(substitution_map, forbidden_variables),
             )
 
-        if is_binary(self.root):
+        elif is_binary(self.root):
             assert self.first and self.second
 
             return Formula(
@@ -974,7 +977,7 @@ class Formula:
                 self.second.substitute(substitution_map, forbidden_variables),
             )
 
-        if is_quantifier(self.root):
+        elif is_quantifier(self.root):
             assert self.variable and self.statement
 
             return Formula(
@@ -1015,7 +1018,34 @@ class Formula:
             >>> formula.propositional_skeleton()
             (((z4&z5)|(~z6->z5)), {'z4': Ax[x=7], 'z5': x=7, 'z6': Q(y)})
         """
-        # Task 9.8
+
+        prop_form_to_pred_form: Dict[Formula, str] = dict()
+
+        def _helper(formula: Formula) -> PropositionalFormula:
+            if is_unary(formula.root):
+                return PropositionalFormula(
+                    formula.root, _helper(formula.first)
+                )
+
+            if is_binary(formula.root):
+                return PropositionalFormula(
+                    formula.root,
+                    _helper(formula.first),
+                    _helper(formula.second),
+                )
+            else:
+                if formula in prop_form_to_pred_form.keys():
+                    return PropositionalFormula(prop_form_to_pred_form[formula])
+                else:
+                    prop_form: str = next(fresh_variable_name_generator)
+                    prop_form_to_pred_form[formula] = prop_form
+                    return PropositionalFormula(prop_form)
+
+        formula_as_prop_formula = _helper(self)
+
+        return formula_as_prop_formula, {
+            v: k for k, v in prop_form_to_pred_form.items()
+        }
 
     @staticmethod
     def from_propositional_skeleton(
@@ -1054,3 +1084,24 @@ class Formula:
         for variable in skeleton.variables():
             assert variable in substitution_map
         # Task 9.10
+
+        if is_unary(skeleton.root):
+            return Formula(
+                skeleton.root,
+                Formula.from_propositional_skeleton(
+                    skeleton.first, substitution_map
+                ),
+            )
+
+        if is_binary(skeleton.root):
+            return Formula(
+                skeleton.root,
+                Formula.from_propositional_skeleton(
+                    skeleton.first, substitution_map
+                ),
+                Formula.from_propositional_skeleton(
+                    skeleton.second, substitution_map
+                ),
+            )
+
+        return substitution_map[skeleton.root]
