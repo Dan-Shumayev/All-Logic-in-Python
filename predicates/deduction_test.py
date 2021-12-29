@@ -64,7 +64,8 @@ def test_remove_assumption(debug=False):
             (prove_homework(),
              '~Ex[(Homework(x)&Fun(x))]', 'Ex[(Homework(x)&Reading(x))]'),
             (prove_homework(),
-             'Ex[(Homework(x)&Reading(x))]', '~Ex[(Homework(x)&Fun(x))]')]:
+             'Ex[(Homework(x)&Reading(x))]', '~Ex[(Homework(x)&Fun(x))]')
+    ]:
         if (debug):
             print("Testing remove_assumption with assumption '" + assumption1 +
                   "' for the following proof:\n" + str(proof))

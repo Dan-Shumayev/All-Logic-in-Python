@@ -73,8 +73,8 @@ def is_constant(string: str) -> bool:
     """
     return (
         (
-            (string[0] >= "0" and string[0] <= "9")
-            or (string[0] >= "a" and string[0] <= "e")
+            ("0" <= string[0] <= "9")
+            or ("a" <= string[0] <= "e")
         )
         and string.isalnum()
     ) or string == "_"
@@ -952,6 +952,9 @@ class Formula:
             assert is_variable(variable)
         # Task 9.2
 
+        if not any(k in self.variables() | self.constants() for k in substitution_map.keys()):
+            return self
+
         if is_equality(self.root) or is_relation(self.root):
             args: List[Term] = [
                 arg.substitute(substitution_map, forbidden_variables)
@@ -973,8 +976,8 @@ class Formula:
 
             return Formula(
                 self.root,
-                self.first.substitute(substitution_map, forbidden_variables),
-                self.second.substitute(substitution_map, forbidden_variables),
+                self.first.substitute(substitution_map.copy(), forbidden_variables),
+                self.second.substitute(substitution_map.copy(), forbidden_variables),
             )
 
         elif is_quantifier(self.root):
@@ -984,10 +987,8 @@ class Formula:
                 self.root,
                 self.variable,
                 self.statement.substitute(
-                    substitution_map.pop(self.variable, None)
-                    and substitution_map
-                    or substitution_map,
-                    set(forbidden_variables).union(self.variable),
+                    {k: v for k, v in substitution_map.items() if k != self.variable},
+                    set(forbidden_variables).union({self.variable}),
                 ),
             )
 
