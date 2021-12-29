@@ -80,7 +80,7 @@ def prove_by_way_of_contradiction(proof: Proof, assumption: Formula) -> Proof:
     assumptions except `assumption`.
 
     Parameters:
-        proof: valid proof of a contradiction (i.e., a formula whose negation is
+        implication_proof: valid proof of a contradiction (i.e., a formula whose negation is
             a tautology) to convert, from assumptions/axioms that include
             `~predicates.prover.Prover.AXIOMS`.
         assumption: formula that is a simple assumption (i.e., without any
@@ -98,8 +98,8 @@ def prove_by_way_of_contradiction(proof: Proof, assumption: Formula) -> Proof:
         if isinstance(line, Proof.UGLine):
             assert line.formula.variable not in assumption.free_variables()
     # Task 11.2
-    proof = remove_assumption(proof, assumption)
-    prover = Prover(proof.assumptions)
-    n = prover.add_proof(proof.conclusion, proof)
-    prover.add_tautological_implication(Formula('~', assumption), {n})
+    implication_proof = remove_assumption(proof, assumption)
+    prover = Prover(implication_proof.assumptions)
+    last_line = prover.add_proof(implication_proof.conclusion, implication_proof)
+    prover.add_tautological_implication(Formula.parse(f'~{assumption}'), {last_line})
     return prover.qed()
