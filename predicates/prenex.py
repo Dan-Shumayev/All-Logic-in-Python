@@ -44,11 +44,9 @@ ADDITIONAL_QUANTIFICATION_AXIOMS = (
                          '(Ax[(Q()->R(x))]->(Q()->Ax[R(x)])))'), {'x','R','Q'}),
     Schema(Formula.parse('(((Q()->Ex[R(x)])->Ex[(Q()->R(x))])&'
                          '(Ex[(Q()->R(x))]->(Q()->Ex[R(x)])))'), {'x','R','Q'}),
-    Schema(Formula.parse('(((R(x)->Q(x))&(Q(x)->R(x)))->'
-                         '((Ax[R(x)]->Ay[Q(y)])&(Ay[Q(y)]->Ax[R(x)])))'),
+    Schema(Formula.parse('(((R(x)->Q(x))&(Q(x)->R(x)))->((Ax[R(x)]->Ay[Q(y)])&(Ay[Q(y)]->Ax[R(x)])))'),
            {'x', 'y', 'R', 'Q'}),
-    Schema(Formula.parse('(((R(x)->Q(x))&(Q(x)->R(x)))->'
-                         '((Ex[R(x)]->Ey[Q(y)])&(Ey[Q(y)]->Ex[R(x)])))'),
+    Schema(Formula.parse('(((R(x)->Q(x))&(Q(x)->R(x)))->((Ex[R(x)]->Ey[Q(y)])&(Ey[Q(y)]->Ex[R(x)])))'),
            {'x', 'y', 'R', 'Q'}))
 
 def is_quantifier_free(formula: Formula) -> bool:
@@ -186,6 +184,55 @@ def _uniquely_rename_quantified_variables(formula: Formula) -> \
     for variable in formula.variables():
         assert variable[0] != 'z'
     # Task 11.5
+    prover = Prover(ADDITIONAL_QUANTIFICATION_AXIOMS)
+
+    if is_quantifier_free(formula):
+        prover.add_tautology(equivalence_of(formula, formula))
+        return formula, prover.qed()
+
+    elif is_unary(formula.root):
+        refactored_argument, proof = _uniquely_rename_quantified_variables(formula.first)
+        last_line = prover.add_proof(proof.conclusion, proof)
+
+        new_formula = Formula(formula.root, refactored_argument)
+        prover.add_tautological_implication(equivalence_of(formula, new_formula), {last_line})
+
+        return new_formula, prover.qed()
+
+    elif is_binary(formula.root):
+        refactored_first, proof = _uniquely_rename_quantified_variables(formula.first)
+        first_arg_line = prover.add_proof(proof.conclusion, proof)
+
+        refactored_second, proof = _uniquely_rename_quantified_variables(formula.second)
+        second_arg_line = prover.add_proof(proof.conclusion, proof)
+
+        new_formula = Formula(formula.root, refactored_first, refactored_second)
+
+        prover.add_tautological_implication(equivalence_of(formula, new_formula), {first_arg_line, second_arg_line})
+
+        return new_formula, prover.qed()
+
+    elif is_quantifier(formula.root):
+        refactored_argument, proof = _uniquely_rename_quantified_variables(formula.statement)
+        antecedent_line = prover.add_proof(proof.conclusion, proof)
+        refactored_var = next(fresh_variable_name_generator)
+
+        new_formula = Formula(
+            formula.root, refactored_var,
+            refactored_argument.substitute({formula.variable: Term(refactored_var)}))
+        conditional_formula = equivalence_of(formula, new_formula)
+
+        conditional_line = prover.add_instantiated_assumption(
+            Formula('->', proof.conclusion, conditional_formula),
+            ADDITIONAL_QUANTIFICATION_AXIOMS[14 if formula.root == 'A' else 15],
+            {'x': formula.variable,
+             'y': refactored_var,
+             'R': formula.statement.substitute({formula.variable: Term('_')}),
+             'Q': refactored_argument.substitute({formula.variable: Term('_')})})
+
+        prover.add_mp(conditional_formula, antecedent_line, conditional_line)
+        return new_formula, prover.qed()
+
 
 def _pull_out_quantifications_across_negation(formula: Formula) -> \
         Tuple[Formula, Proof]:
@@ -230,6 +277,42 @@ def _pull_out_quantifications_across_negation(formula: Formula) -> \
     """
     assert is_unary(formula.root)
     # Task 11.6
+    prover = Prover(ADDITIONAL_QUANTIFICATION_AXIOMS)
+
+    if not is_quantifier(formula.first.root):  # base case
+        prover.add_tautology(equivalence_of(formula, formula))
+        return formula, prover.qed()
+
+    else:
+        quantifier = formula.first.root
+        variable = formula.first.variable
+        negated_arg = formula.first.statement
+
+        axiom = 0 if quantifier == 'A' else 1
+        pulled_inner_formula, pulled_inner_formula_proof = _pull_out_quantifications_across_negation(Formula.parse(f'~{negated_arg}'))
+
+        instantiation_map = {'x': variable, 'R': negated_arg.substitute({variable: Term('_')})}
+
+        pull_equivalence = ADDITIONAL_QUANTIFICATION_AXIOMS[axiom].instantiate(instantiation_map)
+        new_formula = pull_equivalence.first.second
+        s1 = prover.add_instantiated_assumption(pull_equivalence, ADDITIONAL_QUANTIFICATION_AXIOMS[axiom], instantiation_map)
+
+        if is_quantifier(pulled_inner_formula.root):
+            n2 = prover.add_proof(pulled_inner_formula_proof.conclusion, pulled_inner_formula_proof)
+            f1 = pulled_inner_formula_proof.conclusion.first.first
+            f2 = pulled_inner_formula_proof.conclusion.first.second
+            axiom = 14 if new_formula.root == 'A' else 15
+            instantiation_map = {'x': variable, 'y': variable,
+                                 'R': f1.substitute({variable: Term('_')}),
+                                 'Q': f2.substitute({variable: Term('_')})}
+            pulled_inner_formula = ADDITIONAL_QUANTIFICATION_AXIOMS[axiom].instantiate(instantiation_map)
+            s3 = prover.add_instantiated_assumption(pulled_inner_formula, ADDITIONAL_QUANTIFICATION_AXIOMS[axiom],instantiation_map)
+            s4 = prover.add_mp(pulled_inner_formula.second, n2, s3)
+            new_formula = pulled_inner_formula.second.first.second
+            conclusion = equivalence_of(formula, new_formula)
+            prover.add_tautological_implication(conclusion, {s1, s4})
+
+        return new_formula, prover.qed()
 
 def _pull_out_quantifications_from_left_across_binary_operator(formula:
                                                                Formula) -> \

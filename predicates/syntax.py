@@ -987,10 +987,8 @@ class Formula:
                 self.root,
                 self.variable,
                 self.statement.substitute(
-                    substitution_map.pop(self.variable, None)
-                    and substitution_map
-                    or substitution_map,
-                    set(forbidden_variables).union(self.variable),
+                    {k: v for k, v in substitution_map.items() if k != self.variable},
+                    set(forbidden_variables).union({self.variable}),
                 ),
             )
 
