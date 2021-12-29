@@ -501,6 +501,7 @@ class Schema:
             )
 
         except (Schema.BoundVariableError, ForbiddenVariableError):
+            raise
             return None
 
 

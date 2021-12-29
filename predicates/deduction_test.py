@@ -20,51 +20,51 @@ def test_remove_assumption(debug=False):
          test_prove_lovers, test_prove_homework, test_prove_group_unique_zero
 
     # Test one invocation
-    # test_prove_group_unique_zero()
-    # proof = prove_group_unique_zero()
-    # if (debug):
-    #     print("Testing remove_assumption with assumption 'plus(a,c)=a' for the "
-    #           'following proof:\n' + str(proof))
-    # result = remove_assumption(proof, Formula.parse('plus(a,c)=a'), debug)
-    # assert result.assumptions == \
-    #        Prover.AXIOMS.union({Schema(Formula.parse(a)) for a in GROUP_AXIOMS})
-    # assert str(result.conclusion) == '(plus(a,c)=a->c=0)'
-    # assert result.is_valid()
+    test_prove_group_unique_zero()
+    proof = prove_group_unique_zero()
+    if (debug):
+        print("Testing remove_assumption with assumption 'plus(a,c)=a' for the "
+              'following proof:\n' + str(proof))
+    result = remove_assumption(proof, Formula.parse('plus(a,c)=a'), debug)
+    assert result.assumptions == \
+           Prover.AXIOMS.union({Schema(Formula.parse(a)) for a in GROUP_AXIOMS})
+    assert str(result.conclusion) == '(plus(a,c)=a->c=0)'
+    assert result.is_valid()
 
     # Test two concurrent invocations
-    # test_prove_lovers()
-    # test_prove_homework()
+    test_prove_lovers()
+    test_prove_homework()
     for proof,assumption1,assumption2 in [
-            # (prove_syllogism(), 'Ax[(Man(x)->Mortal(x))]', 'Man(aristotle)'),
-            # (prove_syllogism(), 'Man(aristotle)', 'Ax[(Man(x)->Mortal(x))]'),
-            # (prove_syllogism_with_universal_instantiation(),
-            #  'Ax[(Man(x)->Mortal(x))]', 'Man(aristotle)'),
-            # (prove_syllogism_with_universal_instantiation(),
-            #  'Man(aristotle)', 'Ax[(Man(x)->Mortal(x))]'),
+            (prove_syllogism(), 'Ax[(Man(x)->Mortal(x))]', 'Man(aristotle)'),
+            (prove_syllogism(), 'Man(aristotle)', 'Ax[(Man(x)->Mortal(x))]'),
+            (prove_syllogism_with_universal_instantiation(),
+             'Ax[(Man(x)->Mortal(x))]', 'Man(aristotle)'),
+            (prove_syllogism_with_universal_instantiation(),
+             'Man(aristotle)', 'Ax[(Man(x)->Mortal(x))]'),
             (prove_syllogism_all_all(),
              'Ax[(Greek(x)->Human(x))]', 'Ax[(Human(x)->Mortal(x))]'),
-            # (prove_syllogism_all_all(),
-            #  'Ax[(Human(x)->Mortal(x))]', 'Ax[(Greek(x)->Human(x))]'),
-            # (prove_syllogism_all_all_with_tautological_implication(),
-            #  'Ax[(Greek(x)->Human(x))]', 'Ax[(Human(x)->Mortal(x))]'),
-            # (prove_syllogism_all_all_with_tautological_implication(),
-            #  'Ax[(Human(x)->Mortal(x))]', 'Ax[(Greek(x)->Human(x))]'),
-            # (prove_syllogism_all_exists(),
-            #  'Ax[(Man(x)->Mortal(x))]', 'Ex[Man(x)]'),
-            # (prove_syllogism_all_exists(),
-            #  'Ex[Man(x)]', 'Ax[(Man(x)->Mortal(x))]'),
-            # (prove_syllogism_all_exists_with_existential_derivation(),
-            #  'Ax[(Man(x)->Mortal(x))]', 'Ex[Man(x)]'),
-            # (prove_syllogism_all_exists_with_existential_derivation(),
-            #  'Ex[Man(x)]', 'Ax[(Man(x)->Mortal(x))]'),
-            # (prove_lovers(),
-            #  'Ax[Ey[Loves(x,y)]]', 'Ax[Az[Ay[(Loves(x,y)->Loves(z,x))]]]'),
-            # (prove_lovers(),
-            #  'Ax[Az[Ay[(Loves(x,y)->Loves(z,x))]]]', 'Ax[Ey[Loves(x,y)]]'),
-            # (prove_homework(),
-            #  '~Ex[(Homework(x)&Fun(x))]', 'Ex[(Homework(x)&Reading(x))]'),
-            # (prove_homework(),
-            #  'Ex[(Homework(x)&Reading(x))]', '~Ex[(Homework(x)&Fun(x))]')
+            (prove_syllogism_all_all(),
+             'Ax[(Human(x)->Mortal(x))]', 'Ax[(Greek(x)->Human(x))]'),
+            (prove_syllogism_all_all_with_tautological_implication(),
+             'Ax[(Greek(x)->Human(x))]', 'Ax[(Human(x)->Mortal(x))]'),
+            (prove_syllogism_all_all_with_tautological_implication(),
+             'Ax[(Human(x)->Mortal(x))]', 'Ax[(Greek(x)->Human(x))]'),
+            (prove_syllogism_all_exists(),
+             'Ax[(Man(x)->Mortal(x))]', 'Ex[Man(x)]'),
+            (prove_syllogism_all_exists(),
+             'Ex[Man(x)]', 'Ax[(Man(x)->Mortal(x))]'),
+            (prove_syllogism_all_exists_with_existential_derivation(),
+             'Ax[(Man(x)->Mortal(x))]', 'Ex[Man(x)]'),
+            (prove_syllogism_all_exists_with_existential_derivation(),
+             'Ex[Man(x)]', 'Ax[(Man(x)->Mortal(x))]'),
+            (prove_lovers(),
+             'Ax[Ey[Loves(x,y)]]', 'Ax[Az[Ay[(Loves(x,y)->Loves(z,x))]]]'),
+            (prove_lovers(),
+             'Ax[Az[Ay[(Loves(x,y)->Loves(z,x))]]]', 'Ax[Ey[Loves(x,y)]]'),
+            (prove_homework(),
+             '~Ex[(Homework(x)&Fun(x))]', 'Ex[(Homework(x)&Reading(x))]'),
+            (prove_homework(),
+             'Ex[(Homework(x)&Reading(x))]', '~Ex[(Homework(x)&Fun(x))]')
     ]:
         if (debug):
             print("Testing remove_assumption with assumption '" + assumption1 +

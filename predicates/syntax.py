@@ -952,6 +952,9 @@ class Formula:
             assert is_variable(variable)
         # Task 9.2
 
+        if not any(k in self.variables() | self.constants() for k in substitution_map.keys()):
+            return self
+
         if is_equality(self.root) or is_relation(self.root):
             args: List[Term] = [
                 arg.substitute(substitution_map, forbidden_variables)
@@ -973,8 +976,8 @@ class Formula:
 
             return Formula(
                 self.root,
-                self.first.substitute(substitution_map, forbidden_variables),
-                self.second.substitute(substitution_map, forbidden_variables),
+                self.first.substitute(substitution_map.copy(), forbidden_variables),
+                self.second.substitute(substitution_map.copy(), forbidden_variables),
             )
 
         elif is_quantifier(self.root):
