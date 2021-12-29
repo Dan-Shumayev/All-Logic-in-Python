@@ -62,6 +62,15 @@ def is_quantifier_free(formula: Formula) -> bool:
         otherwise.
     """
     # Task 11.3a
+    if is_quantifier(formula.root):
+        return False
+    elif any(check(formula.root) for check in [is_variable, is_relation, is_constant, is_equality, is_function]):
+        return True
+    elif is_unary(formula.root):
+        return is_quantifier_free(formula.first)
+    elif is_binary(formula.root):
+        return is_quantifier_free(formula.first) and is_quantifier_free(formula.second)
+
 
 def is_in_prenex_normal_form(formula: Formula) -> bool:
     """Checks if the given formula is in prenex normal form.
@@ -74,6 +83,11 @@ def is_in_prenex_normal_form(formula: Formula) -> bool:
         otherwise.
     """
     # Task 11.3b
+    if is_quantifier_free(formula):
+        return True
+    if is_quantifier(formula.root):
+        return is_in_prenex_normal_form(formula.statement)
+    return False
 
 def equivalence_of(formula1: Formula, formula2: Formula) -> Formula:
     """States the equivalence of the two given formulas as a formula.
