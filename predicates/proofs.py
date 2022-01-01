@@ -265,12 +265,14 @@ class Schema:
             assert is_variable(variable)
         # Task 9.3
 
-        if is_relation(formula.root):
+        if is_relation(formula.root) or is_equality(formula.root):
             if formula.root not in relations_instantiation_map.keys():
+                # Relation isn't mapped in this case (func isn't never)
                 return formula.substitute(
                     constants_and_variables_instantiation_map
                 )
             else:
+                # Template relation
                 substituted_relation: Formula = relations_instantiation_map[
                     formula.root
                 ]
@@ -279,7 +281,7 @@ class Schema:
                     str
                 ] = substituted_relation.free_variables().intersection(
                     bound_variables
-                )
+                )  # Rule-1 violation
 
                 if common_vars:
                     raise Schema.BoundVariableError(
@@ -299,19 +301,6 @@ class Schema:
                         "_": substituted_arg,
                     }
                 )
-
-        if is_equality(formula.root):
-            assert formula.arguments is not None and len(formula.arguments) == 2
-
-            return Formula(
-                formula.root,
-                [
-                    arg.substitute(
-                        constants_and_variables_instantiation_map,
-                    )
-                    for arg in formula.arguments
-                ],
-            )
 
         if is_unary(formula.root):
             assert formula.first
@@ -499,7 +488,6 @@ class Schema:
                 },
                 {k: v for k, v in instantiation_map.items() if is_relation(k)},
             )
-
         except (Schema.BoundVariableError, ForbiddenVariableError):
             return None
 
