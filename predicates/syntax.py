@@ -480,44 +480,31 @@ class Term:
             assert is_variable(variable)
         # Task 9.1
 
-        Term._raise_excp_upon_forbid_var(
-            substitution_map, forbidden_variables, ft_reduce
-        )
-
-        return self.replace_const_var_template(substitution_map)
-
-    def replace_const_var_template(
-        self, substitution_map: Mapping[str, Term]
-    ) -> Term:
-
         if is_function(self.root):
             assert self.arguments
             modified_args: List[Term] = [
-                arg.replace_const_var_template(substitution_map)
+                arg.substitute(substitution_map, forbidden_variables)
                 for arg in self.arguments
             ]
 
             return Term(self.root, modified_args)
+
+        possible_forbid_vars: Set[
+            str
+        ] = self.root in substitution_map.keys() and substitution_map[
+            self.root
+        ].variables().intersection(
+            forbidden_variables
+        )
+
+        if possible_forbid_vars:
+            raise ForbiddenVariableError(possible_forbid_vars.pop())
 
         return (
             substitution_map[self.root]
             if self.root in substitution_map.keys()
             else Term(self.root)
         )
-
-    @staticmethod
-    def _raise_excp_upon_forbid_var(
-        substitution_map, forbidden_variables, ft_reduce
-    ):
-        if substitution_map:
-            all_variables: Set[str] = ft_reduce(
-                lambda vars1, vars2: vars1 | vars2,
-                [term.variables() for term in substitution_map.values()],
-            )
-
-            for var in forbidden_variables:
-                if var in all_variables:
-                    raise ForbiddenVariableError(var)
 
 
 @lru_cache(maxsize=100)  # Cache the return value of is_equality
@@ -980,13 +967,18 @@ class Formula:
         elif is_quantifier(self.root):
             assert self.variable and self.statement
 
+            # Here we're copying the dictionary in case we're gonna
+            # remove a mapping from the dictionary. We're guided not to
+            # map bounded variables, just leave them unchanged.
+            bound_var_free: Dict[str, Term] = substitution_map.copy()
+
             return Formula(
                 self.root,
                 self.variable,
                 self.statement.substitute(
-                    substitution_map.pop(self.variable, None)
-                    and substitution_map
-                    or substitution_map,
+                    bound_var_free.pop(self.variable, None)
+                    and bound_var_free
+                    or bound_var_free,
                     set(forbidden_variables).union(self.variable),
                 ),
             )
