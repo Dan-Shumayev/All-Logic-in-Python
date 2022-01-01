@@ -967,18 +967,15 @@ class Formula:
         elif is_quantifier(self.root):
             assert self.variable and self.statement
 
-            # Here we're copying the dictionary in case we're gonna
-            # remove a mapping from the dictionary. We're guided not to
-            # map bounded variables, just leave them unchanged.
-            bound_var_free: Dict[str, Term] = substitution_map.copy()
-
             return Formula(
                 self.root,
                 self.variable,
                 self.statement.substitute(
-                    bound_var_free.pop(self.variable, None)
-                    and bound_var_free
-                    or bound_var_free,
+                    {
+                        k: v
+                        for k, v in substitution_map.items()
+                        if k != self.variable
+                    },
                     set(forbidden_variables).union(self.variable),
                 ),
             )
