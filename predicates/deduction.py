@@ -44,7 +44,7 @@ def remove_assumption(
     phi = assumption
     line_in_new_proof = dict()
     prover = Prover(
-        {a for a in proof.assumptions if a.formula != assumption},
+        {assum for assum in proof.assumptions if assum.formula != assumption},
         print_as_proof_forms,
     )
 
@@ -67,6 +67,7 @@ def remove_assumption(
         elif isinstance(line, Proof.MPLine):
             alpha = proof.lines[line.antecedent_line_number].formula
             beta = line.formula
+
             step1 = prover.add_tautology(
                 f"(({phi}->({alpha}->{beta}))->(({phi}->{alpha})->({phi}->{beta}))"
             )
@@ -128,3 +129,14 @@ def prove_by_way_of_contradiction(proof: Proof, assumption: Formula) -> Proof:
         if isinstance(line, Proof.UGLine):
             assert line.formula.variable not in assumption.free_variables()
     # Task 11.2
+
+    implication_proof: Proof = remove_assumption(proof, assumption)
+    prover = Prover(implication_proof.assumptions)
+    last_line: int = prover.add_proof(
+        implication_proof.conclusion, implication_proof
+    )
+    prover.add_tautological_implication(
+        Formula.parse(f"~{assumption}"), {last_line}
+    )
+
+    return prover.qed()
