@@ -596,29 +596,33 @@ class Prover:
         # Task 10.7
 
         def append_UG_UI(
-            sub_map: Dict[str, Term],
+            sub_map_to_fresh: Dict[str, Term],
             fresh_to_mapped: Dict[str, Term],
             last_appended_line: int,
         ) -> int:
+            def add_substituted_line(
+                formula: Formula,
+                sub_map: Dict[str, Term],
+                last_appended_line: int,
+            ) -> Tuple[int, Formula]:
+                for v in formula.variables():
+                    last_appended_line = self.add_ug(
+                        Formula.parse(f"A{v}[{formula}]"), last_appended_line
+                    )
+                    formula = formula.substitute({v: sub_map[v]})
+                    last_appended_line = self.add_universal_instantiation(
+                        formula, last_appended_line, sub_map[v]
+                    )
+
+                return last_appended_line, formula
+
             formula: Formula = self._lines[last_appended_line].formula
-
-            for v in formula.variables():
-                last_appended_line = self.add_ug(
-                    Formula.parse(f"A{v}[{formula}]"), last_appended_line
-                )
-                formula = formula.substitute({v: sub_map[v]})
-                last_appended_line = self.add_universal_instantiation(
-                    formula, last_appended_line, sub_map[v]
-                )
-
-            for v in formula.variables():
-                last_appended_line = self.add_ug(
-                    Formula.parse(f"A{v}[{formula}]"), last_appended_line
-                )
-                formula = formula.substitute({v: fresh_to_mapped[v]})
-                last_appended_line = self.add_universal_instantiation(
-                    formula, last_appended_line, fresh_to_mapped[v]
-                )
+            last_appended_line, formula = add_substituted_line(
+                formula, sub_map_to_fresh, last_appended_line
+            )
+            last_appended_line, _ = add_substituted_line(
+                formula, fresh_to_mapped, last_appended_line
+            )
 
             return last_appended_line
 
