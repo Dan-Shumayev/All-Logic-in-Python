@@ -255,5 +255,5 @@ def test_ex11(debug=False):
     test_to_prenex_normal_form_from_uniquely_named_variables(debug)
     test_to_prenex_normal_form(debug)
 
-def test_all(debug=False):
-    test_ex11(debug)
+
+test_ex11(True)
