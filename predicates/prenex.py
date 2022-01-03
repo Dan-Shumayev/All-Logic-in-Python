@@ -396,6 +396,69 @@ def _pull_out_quantifications_across_negation(
     assert is_unary(formula.root)
     # Task 11.6
 
+    prover = Prover(ADDITIONAL_QUANTIFICATION_AXIOMS)
+
+    if not is_quantifier(formula.first.root):  # base case
+        prover.add_tautology(equivalence_of(formula, formula))
+        return formula, prover.qed()
+
+    else:
+        quantifier = formula.first.root
+        variable = formula.first.variable
+        negated_arg = formula.first.statement
+
+        axiom = 0 if quantifier == "A" else 1
+        (
+            pulled_inner_formula,
+            pulled_inner_formula_proof,
+        ) = _pull_out_quantifications_across_negation(
+            Formula.parse(f"~{negated_arg}")
+        )
+
+        instantiation_map = {
+            "x": variable,
+            "R": negated_arg.substitute({variable: Term("_")}),
+        }
+
+        pull_equivalence = ADDITIONAL_QUANTIFICATION_AXIOMS[axiom].instantiate(
+            instantiation_map
+        )
+        new_formula = pull_equivalence.first.second
+        s1 = prover.add_instantiated_assumption(
+            pull_equivalence,
+            ADDITIONAL_QUANTIFICATION_AXIOMS[axiom],
+            instantiation_map,
+        )
+
+        if is_quantifier(pulled_inner_formula.root):
+            n2 = prover.add_proof(
+                pulled_inner_formula_proof.conclusion,
+                pulled_inner_formula_proof,
+            )
+            f1 = pulled_inner_formula_proof.conclusion.first.first
+            f2 = pulled_inner_formula_proof.conclusion.first.second
+            axiom = 14 if new_formula.root == "A" else 15
+            instantiation_map = {
+                "x": variable,
+                "y": variable,
+                "R": f1.substitute({variable: Term("_")}),
+                "Q": f2.substitute({variable: Term("_")}),
+            }
+            pulled_inner_formula = ADDITIONAL_QUANTIFICATION_AXIOMS[
+                axiom
+            ].instantiate(instantiation_map)
+            s3 = prover.add_instantiated_assumption(
+                pulled_inner_formula,
+                ADDITIONAL_QUANTIFICATION_AXIOMS[axiom],
+                instantiation_map,
+            )
+            s4 = prover.add_mp(pulled_inner_formula.second, n2, s3)
+            new_formula = pulled_inner_formula.second.first.second
+            conclusion = equivalence_of(formula, new_formula)
+            prover.add_tautological_implication(conclusion, {s1, s4})
+
+        return new_formula, prover.qed()
+
 
 def _pull_out_quantifications_from_left_across_binary_operator(
     formula: Formula,
@@ -444,6 +507,12 @@ def _pull_out_quantifications_from_left_across_binary_operator(
     assert is_binary(formula.root)
     # Task 11.7a
 
+    QUANTIFICATION_axioms_indices: Dict[str, int] = {"|": 6, "&": 2, "->": 10}
+
+    return _pull_out_quantifiers_from_binary_formula(
+        QUANTIFICATION_axioms_indices, formula, formula.first, formula.second
+    )
+
 
 def _pull_out_quantifications_from_right_across_binary_operator(
     formula: Formula,
@@ -491,6 +560,91 @@ def _pull_out_quantifications_from_right_across_binary_operator(
     assert has_uniquely_named_variables(formula)
     assert is_binary(formula.root)
     # Task 11.7b
+
+    QUANTIFICATION_axioms_indices: Dict[str, int] = {"|": 8, "&": 4, "->": 12}
+
+    return _pull_out_quantifiers_from_binary_formula(
+        QUANTIFICATION_axioms_indices, formula, formula.second, formula.first
+    )
+
+
+def _pull_out_quantifiers_from_binary_formula(
+    axiom_to_index: Dict[str, int],
+    formula: Formula,
+    rhs_formula: Formula,
+    lhs_formula: Formula,
+) -> Tuple[Formula, Proof]:
+
+    prover = Prover(ADDITIONAL_QUANTIFICATION_AXIOMS)
+    op: str = formula.root
+
+    if is_quantifier(rhs_formula.root):
+        variable, quantifier, statement = (
+            rhs_formula.variable,
+            rhs_formula.root,
+            rhs_formula.statement,
+        )
+
+        instantiation_map = {
+            "Q": lhs_formula,
+            "R": statement.substitute({variable: Term("_")}),
+            "x": variable,
+        }
+
+        axiom_idx = axiom_to_index[op]
+        if quantifier == "E":
+            axiom_idx += 1
+        equivalence: Optional[Formula] = ADDITIONAL_QUANTIFICATION_AXIOMS[
+            axiom_idx
+        ].instantiate(instantiation_map)
+
+        step1 = prover.add_instantiated_assumption(
+            equivalence,
+            ADDITIONAL_QUANTIFICATION_AXIOMS[axiom_idx],
+            instantiation_map,
+        )
+        form = (
+            Formula(op, rhs_formula.statement, lhs_formula)
+            if formula.first == rhs_formula
+            else Formula(op, lhs_formula, rhs_formula.statement)
+        )
+        form, pre = _pull_out_quantifiers_from_binary_formula(
+            axiom_to_index, form, rhs_formula.statement, lhs_formula
+        )
+        new_formula: Formula = equivalence.first.second
+        if is_quantifier(form.root):
+            first1: Formula = pre.conclusion.first.first
+            first2: Formula = pre.conclusion.first.second
+
+            instantiation_map = {
+                "Q": first2.substitute({variable: Term("_")}),
+                "R": first1.substitute({variable: Term("_")}),
+                "y": variable,
+                "x": variable,
+            }
+
+            axiom_idx: int = 14 if new_formula.root == "A" else 15
+            form = ADDITIONAL_QUANTIFICATION_AXIOMS[axiom_idx].instantiate(
+                instantiation_map
+            )
+            step2 = prover.add_instantiated_assumption(
+                form,
+                ADDITIONAL_QUANTIFICATION_AXIOMS[axiom_idx],
+                instantiation_map,
+            )
+
+            n = prover.add_proof(pre.conclusion, pre)
+            step3 = prover.add_mp(form.second, n, step2)
+
+            new_formula = form.second.first.second
+            conclusion = equivalence_of(formula, new_formula)
+            prover.add_tautological_implication(conclusion, {step3, step1})
+
+        return new_formula, prover.qed()
+
+    # Otherwise, not a quantification -> no-op
+    prover.add_tautology(equivalence_of(formula, formula))
+    return formula, prover.qed()
 
 
 def _pull_out_quantifications_across_binary_operator(
