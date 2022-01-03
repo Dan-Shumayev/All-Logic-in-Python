@@ -976,7 +976,7 @@ class Formula:
                         for k, v in substitution_map.items()
                         if k != self.variable
                     },
-                    set(forbidden_variables).union(self.variable),
+                    set(forbidden_variables).union({self.variable}),
                 ),
             )
 
