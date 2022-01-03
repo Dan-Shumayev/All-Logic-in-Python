@@ -277,6 +277,79 @@ def _uniquely_rename_quantified_variables(
         assert variable[0] != "z"
     # Task 11.5
 
+    prover = Prover(ADDITIONAL_QUANTIFICATION_AXIOMS)
+
+    if is_quantifier_free(formula):
+        prover.add_tautology(equivalence_of(formula, formula))
+        return formula, prover.qed()
+
+    elif is_unary(formula.root):
+        refactored_argument, proof = _uniquely_rename_quantified_variables(
+            formula.first
+        )
+        last_line = prover.add_proof(proof.conclusion, proof)
+
+        new_formula = Formula(formula.root, refactored_argument)
+        prover.add_tautological_implication(
+            equivalence_of(formula, new_formula), {last_line}
+        )
+
+        return new_formula, prover.qed()
+
+    elif is_binary(formula.root):
+        refactored_first, proof = _uniquely_rename_quantified_variables(
+            formula.first
+        )
+        first_arg_line = prover.add_proof(proof.conclusion, proof)
+
+        refactored_second, proof = _uniquely_rename_quantified_variables(
+            formula.second
+        )
+        second_arg_line = prover.add_proof(proof.conclusion, proof)
+
+        new_formula = Formula(formula.root, refactored_first, refactored_second)
+
+        prover.add_tautological_implication(
+            equivalence_of(formula, new_formula),
+            {first_arg_line, second_arg_line},
+        )
+
+        return new_formula, prover.qed()
+
+    elif is_quantifier(formula.root):
+        refactored_argument, proof = _uniquely_rename_quantified_variables(
+            formula.statement
+        )
+        antecedent_line = prover.add_proof(proof.conclusion, proof)
+        refactored_var = next(fresh_variable_name_generator)
+
+        new_formula = Formula(
+            formula.root,
+            refactored_var,
+            refactored_argument.substitute(
+                {formula.variable: Term(refactored_var)}
+            ),
+        )
+        conditional_formula = equivalence_of(formula, new_formula)
+
+        conditional_line = prover.add_instantiated_assumption(
+            Formula("->", proof.conclusion, conditional_formula),
+            ADDITIONAL_QUANTIFICATION_AXIOMS[14 if formula.root == "A" else 15],
+            {
+                "x": formula.variable,
+                "y": refactored_var,
+                "R": formula.statement.substitute(
+                    {formula.variable: Term("_")}
+                ),
+                "Q": refactored_argument.substitute(
+                    {formula.variable: Term("_")}
+                ),
+            },
+        )
+
+        prover.add_mp(conditional_formula, antecedent_line, conditional_line)
+        return new_formula, prover.qed()
+
 
 def _pull_out_quantifications_across_negation(
     formula: Formula,
