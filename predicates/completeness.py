@@ -6,6 +6,8 @@
 
 """Building blocks for proving the Completeness Theorem for Predicate Logic."""
 
+from functools import reduce as ft_reduce
+from itertools import product as it_product
 from typing import AbstractSet, Container, Set, Union
 
 from logic_utils import fresh_constant_name_generator
@@ -75,8 +77,6 @@ def is_primitively_closed(sentences: AbstractSet[Formula]) -> bool:
             and len(sentence.free_variables()) == 0
         )
     # Task 12.1a
-    from functools import reduce as ft_reduce
-    from itertools import product as it_product
 
     return all(
         all(
@@ -85,7 +85,13 @@ def is_primitively_closed(sentences: AbstractSet[Formula]) -> bool:
             in sentences
             for arguments in it_product(get_constants(sentences), repeat=arity)
         )
-        for relation, arity in ft_reduce(
+        for relation, arity in get_relations(sentences)
+    )
+
+
+def get_relations(sentences: AbstractSet[Formula]) -> Set[Tuple[str, int]]:
+    return set(
+        ft_reduce(
             lambda rel1, rel2: rel1 | rel2,
             (sentence.relations() for sentence in sentences),
         )
@@ -232,6 +238,8 @@ def get_primitives(quantifier_free: Formula) -> Set[Formula]:
     assert "=" not in str(quantifier_free)
     # Task 12.3a
 
+    return quantifier_free.propositional_skeleton()[1].values()
+
 
 def model_or_inconsistency(
     sentences: AbstractSet[Formula],
@@ -246,14 +254,69 @@ def model_or_inconsistency(
 
     Returns:
         A model in which all of the given sentences hold if such exists,
-        otherwise a valid proof of  a contradiction from the given formulas via
+        otherwise a valid proof of a contradiction from the given formulas via
         `~predicates.prover.Prover.AXIOMS`.
     """
     assert is_closed(sentences)
-    for sentence in sentences:
-        assert len(sentence.functions()) == 0
-        assert "=" not in str(sentence)
+    for relation in sentences:
+        assert len(relation.functions()) == 0
+        assert "=" not in str(relation)
     # Task 12.3b
+
+    constants: Set[str] = get_constants(sentences)
+    relations: Set[Tuple[str, int]] = get_relations(sentences)
+    constant_interpretations: Dict[str, str] = {c: c for c in constants}
+
+    relation_interpretations: Dict[str, Set[int]] = {
+        r: set() for r, _ in relations
+    }
+
+    for sentence in sentences:
+        if is_relation(sentence.root):
+            args: Tuple[str] = tuple(arg.root for arg in sentence.arguments)
+            relation_interpretations[sentence.root].add(args)
+
+    model = Model(
+        constants, constant_interpretations, relation_interpretations, {}
+    )
+
+    unsatisfied: Optional[Formula] = None
+    for sentence in sentences:
+        if not model.evaluate_formula(sentence):
+            unsatisfied = sentence
+
+    if unsatisfied:
+        unsatisfied_quantifier_free: Formula = (
+            find_unsatisfied_quantifier_free_sentence(
+                sentences, model, unsatisfied
+            )
+        )
+
+        primitives: Set[Formula] = get_primitives(unsatisfied_quantifier_free)
+
+        contradicting_sentences: Set[Formula] = {unsatisfied_quantifier_free}
+
+        for p in primitives:
+            if p in sentences:
+                contradicting_sentences.add(p)
+            else:
+                not_p = Formula("~", p)
+                assert not_p in sentences
+                contradicting_sentences.add(not_p)
+
+        prover = Prover(contradicting_sentences)
+        for assumption in contradicting_sentences:
+            prover.add_assumption(assumption)
+
+        contradiction = Formula.parse("(z=z&~z=z)")
+
+        prover.add_tautological_implication(
+            contradiction, set(range(len(contradicting_sentences)))
+        )
+
+        return prover.qed()
+
+    return model
 
 
 def combine_contradictions(
