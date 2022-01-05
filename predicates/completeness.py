@@ -447,7 +447,6 @@ def eliminate_universal_instantiation_assumption(
             ),
         },
     )
-    #     UI = Schema(Formula.parse("(Ax[R(x)]->R(c))"), {"R", "x", "c"})
     line2 = prover.add_assumption(universal)
 
     line3 = prover.add_mp(
@@ -488,6 +487,22 @@ def universal_closure_step(sentences: AbstractSet[Formula]) -> Set[Formula]:
         )
     # Task 12.6
 
+    constants = get_constants(sentences)
+    augmented_sentences = list(sentences)
+
+    for sentence in sentences:
+        if sentence.root == "A":
+            statement = sentence.statement
+            variable = sentence.variable
+            augmented_sentences.extend(
+                [
+                    statement.substitute({variable: Term(constant)})
+                    for constant in constants
+                ]
+            )
+
+    return set(augmented_sentences)
+
 
 def replace_constant(
     proof: Proof, constant: str, variable: str = "zz"
@@ -516,6 +531,56 @@ def replace_constant(
     for line in proof.lines:
         assert variable not in line.formula.variables()
     # Task 12.7a
+
+    new_const_to_new_var: Dict[str, Term] = {constant: Term(variable)}
+
+    prover = Prover(
+        {
+            Schema(
+                assum.formula.substitute(new_const_to_new_var), assum.templates
+            )
+            for assum in proof.assumptions
+        }
+    )
+
+    for line in proof.lines:
+        line_formula_substituted = line.formula.substitute(new_const_to_new_var)
+
+        if isinstance(line, Proof.TautologyLine):
+            prover.add_tautology(line_formula_substituted)
+        elif isinstance(line, Proof.MPLine):
+            prover.add_mp(
+                line_formula_substituted,
+                line.antecedent_line_number,
+                line.conditional_line_number,
+            )
+        elif isinstance(line, Proof.UGLine):
+            prover.add_ug(
+                line_formula_substituted, line.nonquantified_line_number
+            )
+        else:
+            assert isinstance(line, Proof.AssumptionLine)
+            instantiation_map: InstantiationMap = dict()
+
+            sub_ass = Schema(
+                line.assumption.formula.substitute(new_const_to_new_var),
+                line.assumption.templates,
+            )
+
+            for k, v in line.instantiation_map.items():
+                if type(v) is str:
+                    if v != constant:
+                        instantiation_map[k] = v
+                    else:
+                        instantiation_map[k] = variable
+                else:
+                    instantiation_map[k] = v.substitute(new_const_to_new_var)
+
+            prover.add_instantiated_assumption(
+                line_formula_substituted, sub_ass, instantiation_map
+            )
+
+    return prover.qed()
 
 
 def eliminate_existential_witness_assumption(
@@ -561,6 +626,39 @@ def eliminate_existential_witness_assumption(
         assert "zz" not in line.formula.variables()
     # Task 12.7b
 
+    prover = Prover(proof.assumptions - {Schema(witness)})
+
+    witness_z: Formula = witness.substitute({constant: Term("zz")})
+    proof_of_witness_negation: Proof = prove_by_way_of_contradiction(
+        replace_constant(proof, constant), witness_z
+    )
+
+    added_line1: int = prover.add_proof(
+        proof_of_witness_negation.conclusion, proof_of_witness_negation
+    )
+
+    phi: Formula = existential.statement
+
+    witness_and_its_negation_contrad = Formula(
+        "&", witness_z, Formula("~", witness_z)
+    )
+    phi_implies_contrad = Formula("->", phi, witness_and_its_negation_contrad)
+
+    added_line2 = prover.add_free_instantiation(
+        Formula("~", phi), added_line1, {"zz": existential.variable}
+    )
+
+    added_line3 = prover.add_assumption(existential)
+    added_line4 = prover.add_tautological_implication(
+        phi_implies_contrad, {added_line2}
+    )
+
+    prover.add_existential_derivation(
+        witness_and_its_negation_contrad, added_line3, added_line4
+    )
+
+    return prover.qed()
+
 
 def existential_closure_step(sentences: AbstractSet[Formula]) -> Set[Formula]:
     """Augments the given sentences with an existential witness that uses a new
@@ -585,3 +683,25 @@ def existential_closure_step(sentences: AbstractSet[Formula]) -> Set[Formula]:
             and len(sentence.free_variables()) == 0
         )
     # Task 12.8
+
+    constants: Set[str] = get_constants(sentences)
+    augmented_sentences: Set[Formula] = set(sentences)
+
+    for sentence in sentences:
+        if sentence.root == "E":
+            existential_var: str = sentence.variable
+            existential_statement: Formula = sentence.statement
+
+            if all(
+                existential_statement.substitute(
+                    {existential_var: Term(constant)}
+                )
+                not in sentences
+                for constant in constants
+            ):
+                generated_witness: Formula = existential_statement.substitute(
+                    {existential_var: Term(next(fresh_constant_name_generator))}
+                )
+                augmented_sentences.add(generated_witness)
+
+    return augmented_sentences
