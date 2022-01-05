@@ -6,6 +6,7 @@
 
 """Building blocks for proving the Completeness Theorem for Predicate Logic."""
 
+import enum
 from functools import reduce as ft_reduce
 from itertools import product as it_product
 from typing import AbstractSet, Container, Set, Union
@@ -424,6 +425,44 @@ def eliminate_universal_instantiation_assumption(
     for assumption in proof.assumptions:
         assert len(assumption.formula.free_variables()) == 0
     # Task 12.5
+
+    substituted_removed_assum = universal.statement.substitute(
+        {universal.variable: Term(constant)}
+    )
+    prover = Prover(proof.assumptions - {Schema(substituted_removed_assum)})
+    removed_assum: Proof = remove_assumption(
+        proof,
+        substituted_removed_assum,
+    )
+    prover.add_proof(removed_assum.conclusion, removed_assum)
+
+    line = prover.add_instantiated_assumption(
+        f"({universal}->{substituted_removed_assum})",
+        Prover.UI,
+        {
+            "x": universal.variable,
+            "c": constant,
+            "R": universal.statement.substitute(
+                {universal.variable: Term("_")}
+            ),
+        },
+    )
+    #     UI = Schema(Formula.parse("(Ax[R(x)]->R(c))"), {"R", "x", "c"})
+    line2 = prover.add_assumption(universal)
+
+    line3 = prover.add_mp(
+        prover._lines[line].formula.second,
+        line2,
+        line,
+    )
+
+    prover.add_mp(
+        prover._lines[len(removed_assum.lines) - 1].formula.second,
+        line3,
+        len(removed_assum.lines) - 1,
+    )
+
+    return prover.qed()
 
 
 def universal_closure_step(sentences: AbstractSet[Formula]) -> Set[Formula]:
