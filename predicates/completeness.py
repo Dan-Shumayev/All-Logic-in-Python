@@ -368,6 +368,26 @@ def combine_contradictions(
         assert len(assumption.formula.free_variables()) == 0
     # Task 12.4
 
+    prover = Prover(common_assumptions)
+
+    p1: Proof = remove_assumption(
+        proof_from_affirmation, affirmed_assumption.formula
+    )
+    p2: Proof = remove_assumption(
+        proof_from_negation, negated_assumption.formula
+    )
+
+    conclusion1_line: int = prover.add_proof(p1.conclusion, p1)
+    conclusion2_line: int = prover.add_proof(p2.conclusion, p2)
+    conclusion3_line: int = prover.add_tautological_implication(
+        f"({p1.conclusion}&{p2.conclusion})",
+        {conclusion1_line, conclusion2_line},
+    )
+
+    prover.add_tautological_implication("(z=z&~z=z)", {conclusion3_line})
+
+    return prover.qed()
+
 
 def eliminate_universal_instantiation_assumption(
     proof: Proof, universal: Formula, constant: str
